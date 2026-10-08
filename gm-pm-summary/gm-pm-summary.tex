@@ -1,0 +1,556 @@
+% !TEX program = xelatex
+\documentclass[12pt,a4paper]{article}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{fontspec}
+\usepackage{amsmath,amssymb}
+\usepackage{tikz}
+\usepackage[most]{tcolorbox}
+\usepackage{booktabs,array}
+\usepackage{enumitem}
+\usepackage{verbatim}
+\usepackage[hidelinks]{hyperref}
+
+\XeTeXlinebreaklocale "th"
+\XeTeXlinebreakskip=0pt plus 1pt
+\setmainfont{THSarabun}[
+  Path=C:/Users/User/AppData/Local/Microsoft/Windows/Fonts/,
+  Extension=.ttf,
+  UprightFont=THSarabun,
+  BoldFont=THSarabun Bold,
+  ItalicFont=THSarabun Italic,
+  BoldItalicFont=THSarabun Bold Italic,
+  Scale=1.28]
+\setmonofont{Consolas}[Scale=0.88]
+\linespread{1.08}
+\setlength{\parskip}{4pt}
+\setlength{\parindent}{0pt}
+
+\definecolor{defcol}{RGB}{30,90,160}
+\definecolor{excol}{RGB}{20,120,70}
+\definecolor{warncol}{RGB}{190,90,0}
+
+\newtcolorbox{defbox}[1]{enhanced,breakable,colback=defcol!5,colframe=defcol,title=#1,fonttitle=\bfseries}
+\newtcolorbox{exbox}[1]{enhanced,breakable,colback=excol!5,colframe=excol,title=#1,fonttitle=\bfseries}
+\newtcolorbox{warnbox}[1]{enhanced,breakable,colback=warncol!6,colframe=warncol,title=#1,fonttitle=\bfseries}
+
+\newcommand{\dB}{\,\mathrm{dB}}
+\newcommand{\jw}{j\omega}
+\newcommand{\atan}{\operatorname{arctan}}
+
+\title{สรุป Gain Margin และ Phase Margin\\[2pt]\large อธิบายหลักการ พร้อมตัวอย่างคำนวณทีละขั้น}
+\author{}
+\date{8 ตุลาคม 2569}
+
+\renewcommand{\contentsname}{สารบัญ}
+\renewcommand{\figurename}{รูปที่}
+\begin{document}
+\maketitle
+\tableofcontents
+\bigskip
+
+%=====================================================================
+\section{ทฤษฎีที่ใช้ในทุกตัวอย่าง}
+
+\subsection{Loop gain และการวิเคราะห์แบบไซน์}
+สำหรับระบบวงปิดที่ป้อนกลับแบบ unity feedback และมีตัวควบคุมสัดส่วน $K$ \emph{loop gain} คือผลคูณของทุกบล็อกที่วนครบหนึ่งรอบ
+\[
+L(s)=K\,G(s).
+\]
+เนื่องจากการวิเคราะห์ margin เป็นการวิเคราะห์ด้วยสัญญาณไซน์ เราแทน $s=\jw$ แล้วดู \emph{ขนาด} $|L(\jw)|$ และ \emph{เฟส} $\angle L(\jw)$ ที่แต่ละความถี่ $\omega$
+
+\subsection{ขนาดและเฟสของตัวประกอบ $(\jw+a)$}
+ระบบในตัวอย่างทั้งหมดเป็นผลคูณของตัวประกอบเชิงเส้น เลขเชิงซ้อน $\jw+a$ มีส่วนจริง $a$ และส่วนจินตภาพ $\omega$ จึงได้
+\[
+|\jw+a|=\sqrt{\omega^{2}+a^{2}},\qquad \angle(\jw+a)=\atan\!\frac{\omega}{a}.
+\]
+ตัวประกอบในตัวเศษ \emph{บวก}เฟส ตัวประกอบในตัวส่วน \emph{ลบ}เฟส ค่าคงที่ (เช่น $500$ หรือ $100K$) เป็นจำนวนจริงบวก จึงมีเฟส $0^\circ$ และไม่กระทบเฟสรวม
+\[
+|L(\jw)|=\frac{\prod |\text{ตัวเศษ}|}{\prod |\text{ตัวส่วน}|},\qquad
+\angle L(\jw)=\sum\atan\frac{\omega}{z_i}-\sum\atan\frac{\omega}{p_i}.
+\]
+
+\subsection{นิยามของ GM และ PM}
+\begin{defbox}{นิยาม}
+\begin{itemize}[leftmargin=1.2em,itemsep=2pt]
+\item \textbf{Phase crossover frequency} $\omega_{pc}$ (ในวิดีโอเรียก $\omega_{gm}$): ความถี่ที่ $\angle L(j\omega_{pc})=-180^\circ$
+\item \textbf{Gain margin}: ถ้าที่ $\omega_{pc}$ ขนาดของ loop gain เท่ากับ $|L(j\omega_{pc})|$ แล้ว
+\[
+\mathrm{GM}=-20\log_{10}\big|L(j\omega_{pc})\big|\ \ \dB
+\quad\Big(\text{หรือเป็นเท่า } \tfrac{1}{|L(j\omega_{pc})|}\Big).
+\]
+ความหมาย: เพิ่ม gain ได้อีกกี่ dB ก่อนที่วงรอบจะถึงจุด $0$ dB พร้อมเฟส $-180^\circ$ (ขอบของความไม่เสถียร)
+\item \textbf{Gain crossover frequency} $\omega_{gc}$ (ในวิดีโอเรียก $\omega_{pm}$): ความถี่ที่ $|L(j\omega_{gc})|=1$ (คือ $0$ dB)
+\item \textbf{Phase margin}:
+\[
+\mathrm{PM}=180^\circ+\angle L(j\omega_{gc}).
+\]
+ความหมาย: เฟสที่ยังหน่วงเพิ่มได้อีกกี่องศาก่อนจะถึง $-180^\circ$ ที่จุดตัด $0$ dB
+\end{itemize}
+\end{defbox}
+
+สำหรับระบบแบบที่ใช้ในตัวอย่าง (เสถียรในวงเปิดและเฟสไม่กลับขึ้น) ถ้า GM $>0$ dB และ PM $>0^\circ$ ทั้งคู่ วงปิดจะเสถียร ค่ายิ่งมากยิ่งมี ``ระยะปลอดภัย'' มาก
+
+\subsection{ขั้นตอนคำนวณ (ใช้ซ้ำได้ทุกโจทย์)}
+\begin{enumerate}[leftmargin=1.6em,itemsep=2pt]
+\item เขียน $L(s)$ (วงปิดคือ $K\cdot G(s)$)
+\item แทน $s=\jw$ แล้วเขียนสูตร $|L(\jw)|$ และ $\angle L(\jw)$ ด้วยรากที่สองและ $\atan$
+\item \textbf{GM}: ตั้ง $\angle L(\jw)=-180^\circ$ แก้หา $\omega_{pc}$ $\to$ แทนใน $|L|$ $\to$ แปลงเป็น dB $\to$ GM $=-$(ค่า dB นั้น)
+\item \textbf{PM}: ตั้ง $|L(\jw)|=1$ แก้หา $\omega_{gc}$ $\to$ แทนใน $\angle L$ $\to$ PM $=180^\circ+\angle L$
+\item \textbf{ถ้าเป็นโจทย์ออกแบบ $K$} ดูหัวข้อถัดไป
+\end{enumerate}
+
+\subsection{ออกแบบ $K$ จาก PM หรือ GM ที่ต้องการ}
+การเปลี่ยน $K$ เพียงยกกราฟขนาดขึ้นหรือลงทั้งเส้น (คูณด้วยค่าคงที่) แต่ \textbf{ไม่เปลี่ยนเฟส} จึงใช้ได้สองแบบ
+\begin{description}[leftmargin=1.2em,itemsep=2pt]
+\item[กำหนด PM] หา $\omega$ ที่เฟสเท่ากับ $-180^\circ+\mathrm{PM}_{\text{ต้องการ}}$ (เช่น PM $=60^\circ\Rightarrow -120^\circ$) แล้วบังคับ $|L(\jw)|=1$ ที่ความถี่นั้นเพื่อหา $K$
+\item[กำหนด GM] หา $\omega_{pc}$ จากเฟส $-180^\circ$ (ไม่ขึ้นกับ $K$) แล้วบังคับ $|L(j\omega_{pc})|=10^{-\mathrm{GM}/20}$ เพื่อหา $K$ (เช่น GM $=12$ dB $\Rightarrow |L|=10^{-12/20}\approx0.251$)
+\end{description}
+
+\subsection{ทางลัดสำหรับ $\omega_{pc}$ เมื่อมีเฉพาะ pole จริง 3 ตัว}
+(เป็นส่วนเสริมของเอกสารนี้ ไม่ได้อยู่ในวิดีโอ) ถ้า $L$ มีตัวส่วน $(\jw+a_1)(\jw+a_2)(\jw+a_3)$ และไม่มีตัวเศษที่ขึ้นกับ $\omega$ เงื่อนไขเฟส $\sum\atan(\omega/a_i)=180^\circ$ หมายถึง $\tan$ ของผลรวมเป็นศูนย์ ซึ่งลดรูปได้เป็น
+\[
+\omega_{pc}^{2}=a_1a_2+a_1a_3+a_2a_3 .
+\]
+ใช้ตรวจคำตอบจาก solver ได้ทันที (ดูตัวอย่าง 1 และ 2)
+
+\begin{warnbox}{ข้อควรระวังที่พบบ่อย}
+\begin{itemize}[leftmargin=1.2em,itemsep=2pt]
+\item GM คือ \emph{ลบ} ของค่า dB ของ $|L(j\omega_{pc})|$ ถ้า $|L|=0.695$ ได้ $-3.16$ dB จึงได้ GM $=+3.16$ dB
+\item เฟสที่ใช้หา PM คือเฟส ณ $\omega_{gc}$ ส่วนเฟสที่ใช้หา GM คือเฟสที่ตั้งเป็น $-180^\circ$ อย่าสลับความถี่สองตัวนี้
+\item PM $=60^\circ$ แปลว่าเฟสต้องเป็น $-120^\circ$ ไม่ใช่ $-60^\circ$
+\item ค่า $K$ ที่หาได้จากโจทย์ ``at least'' คือ \textbf{ค่าสูงสุด} ที่ยอมให้ ถ้าลด $K$ margin จะเพิ่ม
+\end{itemize}
+\end{warnbox}
+
+%=====================================================================
+\section{ตัวอย่าง 1: วงเปิด หา GM และ PM}
+\begin{exbox}{โจทย์}
+\[
+G(s)=\frac{500}{(s+2)(s+4)(s+8)}.\quad \text{จงหา GM และ PM}
+\]
+\end{exbox}
+
+\paragraph{ขั้น 1: แปลงเป็นโดเมน $\jw$}
+\[
+G(\jw)=\frac{500}{(\jw+2)(\jw+4)(\jw+8)},\qquad
+|G|=\frac{500}{\sqrt{\omega^2+4}\sqrt{\omega^2+16}\sqrt{\omega^2+64}},
+\]
+\[
+\angle G=-\Big(\atan\tfrac{\omega}{2}+\atan\tfrac{\omega}{4}+\atan\tfrac{\omega}{8}\Big).
+\]
+
+\paragraph{ขั้น 2: Gain margin}
+ตั้งเฟสเป็น $-180^\circ$ คือ $\atan\frac{\omega}{2}+\atan\frac{\omega}{4}+\atan\frac{\omega}{8}=180^\circ$ วิดีโอใช้การวาดกราฟสองเส้นแล้วหาจุดตัด (หรือใช้ solver) ได้ $\omega_{pc}\approx7.48$ rad/s ตรวจด้วยทางลัด: $\omega_{pc}^2=2\cdot4+2\cdot8+4\cdot8=56\Rightarrow\omega_{pc}=\sqrt{56}=7.483$ ตรงกัน
+
+แทนใน $|G|$:
+\[
+|G(j\omega_{pc})|=\frac{500}{\sqrt{60}\sqrt{72}\sqrt{120}}=\frac{500}{720}=0.694\approx0.695
+\]
+\[
+20\log_{10}(0.694)=-3.17\dB\ \Longrightarrow\ \boxed{\mathrm{GM}=3.17\dB}
+\]
+(วิดีโอปัดเป็น $3.16$ dB)
+
+\paragraph{ขั้น 3: Phase margin}
+ตั้ง $|G(\jw)|=1$ แก้หาความถี่ ได้ $\omega_{gc}\approx6.29$ rad/s แทนในเฟส:
+\[
+\angle G=-\big(\atan 3.14+\atan1.57+\atan0.786\big)\approx-168^\circ
+\]
+\[
+\boxed{\mathrm{PM}=180^\circ+(-168^\circ)\approx12^\circ}
+\]
+
+\begin{figure}[h]
+\centering
+\input{fig_ex1.tex}
+\caption{Bode ของตัวอย่าง 1: จุด $\omega_{gc}=6.29$ ให้ PM $\approx12^\circ$ และจุด $\omega_{pc}=7.48$ ให้ GM $\approx3.17$ dB}
+\end{figure}
+
+\paragraph{ตีความและตรวจคำตอบ}
+GM และ PM เป็นบวกทั้งคู่ ระบบเสถียร แต่ทั้งสองค่าน้อยมาก (PM เพียง $12^\circ$) ผลตอบสนองจะแกว่งมากและไวต่อการเปลี่ยนแปลงของระบบ ตรวจด้วย Routh: ตัวส่วน $=s^3+14s^2+56s+64$ ระบบวงปิดคงเสถียรเมื่อ $14\cdot56>64+K$ คือ $K<720$ ส่วนกลับของ $|G(j\omega_{pc})|$ คือ $1/0.694=1.44$ และ $500\times1.44=720$ ตรงกับขอบเสถียรภาพพอดี แปลว่า GM $=20\log_{10}(720/500)=3.17$ dB ถูกต้อง
+
+%=====================================================================
+\section{ตัวอย่าง 2: ออกแบบ $K$ จาก PM}
+\begin{exbox}{โจทย์}
+ระบบวงปิดแบบ negative unity feedback มีตัวควบคุมสัดส่วน $K$ และพลานต์
+\[
+G(s)=\frac{100}{(s+2)(s+3)(s+4)}.
+\]
+(ก) หา $K$ ที่ทำให้ PM $\ge60^\circ$ \quad (ข) หา GM ที่ $K$ นั้น
+\end{exbox}
+
+\paragraph{ขั้น 1: Loop gain}
+\[
+L(\jw)=\frac{100K}{(\jw+2)(\jw+3)(\jw+4)},\quad
+|L|=\frac{100K}{\sqrt{\omega^2+4}\sqrt{\omega^2+9}\sqrt{\omega^2+16}},
+\]
+\[
+\angle L=-\Big(\atan\tfrac{\omega}{2}+\atan\tfrac{\omega}{3}+\atan\tfrac{\omega}{4}\Big).
+\]
+
+\paragraph{ขั้น 2 (ก): หาความถี่ที่เฟสเป็น $-120^\circ$}
+PM $=60^\circ$ ต้องการ $\angle L(j\omega_{gc})=-180^\circ+60^\circ=-120^\circ$ จึงแก้
+\[
+\atan\tfrac{\omega}{2}+\atan\tfrac{\omega}{3}+\atan\tfrac{\omega}{4}=120^\circ
+\ \Rightarrow\ \omega_{gc}\approx2.4\ \text{rad/s}.
+\]
+(ค่าละเอียดคือ $2.405$)
+
+\paragraph{ขั้น 3 (ก): บังคับ $|L|=1$ ที่ความถี่นั้น}
+\[
+\frac{100K}{\sqrt{2.4^2+4}\sqrt{2.4^2+9}\sqrt{2.4^2+16}}=1
+\ \Rightarrow\ \boxed{K\approx0.56}
+\]
+(ค่าละเอียด $K=0.5614$)
+
+\paragraph{ขั้น 4 (ข): GM ที่ $K=0.56$}
+เฟสไม่ขึ้นกับ $K$ จึงหา $\omega_{pc}$ จาก $\sum\atan(\omega/a_i)=180^\circ$ ได้ $\omega_{pc}\approx5.1$ rad/s (ทางลัด: $\omega_{pc}^2=2\cdot3+2\cdot4+3\cdot4=26\Rightarrow\sqrt{26}=5.099$) แทนใน $|L|$ โดย $100K=56$:
+\[
+|L(j\omega_{pc})|=\frac{56}{\sqrt{5.1^2+4}\sqrt{5.1^2+9}\sqrt{5.1^2+16}}\approx0.267
+\ \Rightarrow\ 20\log_{10}(0.267)=-11.5\dB
+\]
+\[
+\boxed{\mathrm{GM}\approx11.5\dB}
+\]
+
+\begin{figure}[h]
+\centering
+\input{fig_ex2.tex}
+\caption{Bode ของตัวอย่าง 2 ที่ $K=0.5614$: PM $=60^\circ$ ที่ $\omega_{gc}=2.41$ และ GM $\approx11.5$ dB ที่ $\omega_{pc}=5.10$}
+\end{figure}
+
+\paragraph{ตรวจคำตอบด้วย Routh}
+ตัวส่วน $=s^3+9s^2+26s+24$ เสถียรเมื่อ $9\cdot26>24+100K$ คือ $K<2.1$ ดังนั้น GM $=20\log_{10}(2.1/0.5614)=11.5$ dB ตรงกับผลข้างต้น
+
+%=====================================================================
+\section{ตัวอย่าง 3: ออกแบบ $K$ จาก GM (ระบบอันดับ 4 มี zero)}
+\begin{exbox}{โจทย์}
+ระบบวงปิด unity feedback ตัวควบคุมสัดส่วน $K$ พลานต์
+\[
+G(s)=\frac{100(s+2)}{(s+1)(s+4)(s+5)(s+6)}.
+\]
+(ก) หา $K$ ที่ทำให้ GM $\ge12$ dB \quad (ข) หา PM ที่ $K$ นั้น
+\end{exbox}
+
+\paragraph{ขั้น 1: Loop gain}
+ตัวเศษ $(\jw+2)$ ให้เฟส \emph{บวก} ตัวส่วนสี่ตัวให้เฟสลบ:
+\[
+|L|=\frac{100K\sqrt{\omega^2+4}}{\sqrt{\omega^2+1}\sqrt{\omega^2+16}\sqrt{\omega^2+25}\sqrt{\omega^2+36}},
+\]
+\[
+\angle L=\atan\tfrac{\omega}{2}-\atan\omega-\atan\tfrac{\omega}{4}-\atan\tfrac{\omega}{5}-\atan\tfrac{\omega}{6}.
+\]
+
+\paragraph{ขั้น 2 (ก): GM $\ge12$ dB หมายถึง $|L(j\omega_{pc})|=10^{-12/20}$}
+\[
+|L(j\omega_{pc})|=10^{-12/20}\approx0.251.
+\]
+เฟสเป็น $-180^\circ$ ที่ $\omega_{pc}\approx7.83$ rad/s (ไม่ขึ้นกับ $K$ ตัวเศษทำให้ทางลัดใช้ไม่ได้ ต้องใช้ solver) แทนในสูตรขนาด:
+\[
+\frac{100K\sqrt{7.83^2+4}}{\sqrt{7.83^2+1}\sqrt{7.83^2+16}\sqrt{7.83^2+25}\sqrt{7.83^2+36}}=0.251
+\ \Rightarrow\ \boxed{K\approx1.98}
+\]
+ค่านี้คือ \textbf{ค่าสูงสุด} ของ $K$ ที่ยังได้ GM ครบ 12 dB (เพิ่ม $K$ margin ลด ลด $K$ margin เพิ่ม) ถ้าต้องการความปลอดภัยเผื่อ เลือก $K$ ต่ำกว่านี้ เช่น $1.7$ หรือ $1.9$ ได้ ซึ่งเป็นการตัดสินใจเชิงออกแบบ
+
+\paragraph{ขั้น 3 (ข): หา PM ที่ $K=1.98$}
+ตั้ง $|L(\jw)|=1$ โดย $100K=198$ ได้ $\omega_{gc}\approx3.42$ rad/s แทนในเฟส ได้ $\angle L\approx-119^\circ$
+\[
+\boxed{\mathrm{PM}=180^\circ-119^\circ\approx61^\circ}
+\]
+
+\begin{figure}[h]
+\centering
+\input{fig_ex3.tex}
+\caption{Bode ของตัวอย่าง 3 ที่ $K=1.979$: GM $=12$ dB ที่ $\omega_{pc}=7.83$ และ PM $\approx61^\circ$ ที่ $\omega_{gc}=3.42$}
+\end{figure}
+
+\paragraph{สรุปผล}
+$K=1.98$ (สูงสุดที่อนุญาต) $\Rightarrow$ GM $=12$ dB และ PM $\approx61^\circ$ ตรวจด้วย Routh ได้ $K_{\text{crit}}\approx7.88$ จึง GM $=20\log_{10}(7.88/1.979)=12.0$ dB
+
+%=====================================================================
+\section{ข้อกำหนดทางความถี่: วงเปิด (OL) วงปิด (CL) กราฟ Polar และ Nichols}
+
+GM และ PM เป็นข้อกำหนดของ \emph{วงเปิด} เท่านั้น ในการออกแบบมักต้องดูข้อกำหนดของ \emph{วงปิด} ควบคู่กันด้วย หัวข้อนี้สรุปนิยาม วิธีคำนวณ และวิธีอ่านค่าจากกราฟ Polar และ Nichols โดยใช้ระบบจากตัวอย่าง 1--3 (ตัวอย่าง 2 และ 3 ใช้ $K$ ที่ออกแบบแล้ว)
+
+\subsection{ข้อกำหนดที่ใช้}
+\begin{defbox}{นิยาม}
+ให้ $L(\jw)$ เป็น loop gain และ unity feedback จะได้ $T(\jw)=\dfrac{L(\jw)}{1+L(\jw)}$ (ฟังก์ชันถ่ายโอนวงปิด) และ $S(\jw)=\dfrac{1}{1+L(\jw)}$
+\begin{description}[leftmargin=1.2em,itemsep=2pt]
+\item[วงเปิด (OL)] $\omega_{gc}$, PM, $\omega_{pc}$, GM (ดูหัวข้อ 1) และค่าคงที่ความผิดพลาดตำแหน่ง $K_p=L(0)$ สำหรับระบบประเภท 0 ความผิดพลาดสถานะอยู่ตัวต่อ step หน่วยคือ $e_{ss}=\dfrac{1}{1+K_p}$
+\item[วงปิด (CL)] จาก $|T(\jw)|$:
+\begin{itemize}[leftmargin=1.2em,itemsep=1pt]
+\item $T(0)$: อัตราขยายสถานะอยู่ตัว ($=1-e_{ss}$)
+\item $M_r=\max_{\omega}|T(\jw)|$ \emph{resonant peak} และ $\omega_r$ คือความถี่ที่เกิดค่าสูงสุด
+\item $\omega_b$ \emph{bandwidth}: ความถี่ที่ $|T|$ ตกลงเหลือ $|T(0)|/\sqrt2$ (ลดลง $3$ dB จากค่าที่ความถี่ต่ำ) ใช้เป็นตัวชี้ความเร็วของผลตอบสนอง
+\item $M_s=\max_{\omega}|S(\jw)|$: ยิ่งต่ำ ระยะห่างต่ำสุดจากจุด $-1$ ยิ่งมาก ($d_{\min}=1/M_s$)
+\end{itemize}
+\end{description}
+\end{defbox}
+
+เนื่องจากตัวอย่างทั้งหมดเป็นระบบประเภท 0 ที่ใช้ตัวควบคุมสัดส่วน $T(0)<1$ เสมอ (มี $e_{ss}$) จึงนิยาม $\omega_b$ เทียบกับ $T(0)$ ไม่ใช่เทียบกับ $1$ ($0$ dB)
+
+\subsection{ตัวอย่างการคำนวณ CL ทีละขั้น (ตัวอย่าง 2, $K=0.5614$)}
+\paragraph{ขั้น 1: ฟังก์ชันถ่ายโอนวงปิด}
+\[
+T(s)=\frac{100K}{(s+2)(s+3)(s+4)+100K}=\frac{56.14}{s^{3}+9s^{2}+26s+80.14}
+\]
+
+\paragraph{ขั้น 2: ค่าที่ความถี่ต่ำ}
+\[
+\begin{gathered}
+T(0)=\frac{56.14}{80.14}=0.7005\ (-3.09\dB)\\[2pt]
+K_p=L(0)=\frac{56.14}{24}=2.339,\qquad e_{ss}=\frac{1}{1+2.339}=0.299
+\end{gathered}
+\]
+นั่นคือผลตอบสนอง step หยุดที่ประมาณ $70\%$ ของค่าที่ต้องการ (ตรงกับ $1-e_{ss}$) เพราะไม่มี integrator
+
+\paragraph{ขั้น 3: Resonant peak}
+แทน $s=\jw$ ที่ตัวส่วนของ $T$: $D(\jw)=(80.14-9\omega^2)+j(26\omega-\omega^3)$ จึงได้
+\[
+|T(\jw)|=\frac{56.14}{\sqrt{Q(\omega)}},\qquad Q(\omega)=(80.14-9\omega^2)^2+(26\omega-\omega^3)^2 .
+\]
+$|T|$ สูงสุดเมื่อ $Q$ ต่ำสุด สแกนหา (หรือใช้ solver) ได้ $\omega_r\approx3.00$ rad/s ตรวจ:
+\[
+Q(3)=(80.14-81)^2+(78-27)^2=0.74+2601=2601.7
+\ \Rightarrow\ M_r=\frac{56.14}{\sqrt{2601.7}}=1.10\ (0.83\dB)
+\]
+เมื่อเทียบกับค่า DC: $M_r/T(0)=1.57$ ($3.9$ dB) แสดงว่ามี peaking ชัดเจนแม้ PM จะเท่ากับ $60^\circ$ เพราะ $T(0)$ ต่ำ
+
+\paragraph{ขั้น 4: Bandwidth}
+ตั้ง $|T|=T(0)/\sqrt2$ หรือ $Q(\omega)=2\cdot80.14^2=12846$ แก้ได้ $\omega_b\approx4.61$ rad/s ตรวจ: $Q(4.61)=(80.14-191.3)^2+(119.9-98.0)^2=12359+480\approx12840$ ซึ่งใกล้เคียงกับ $12846$ (ผลต่างมาจากการปัดทศนิยม)
+
+\paragraph{ขั้น 5: Sensitivity}
+สแกน $|1/(1+L(\jw))|$ ได้ $M_s\approx1.75$ ดังนั้นระยะห่างต่ำสุดจากจุด $-1$ เท่ากับ $1/M_s=0.57$
+
+\subsection{ผลของทั้งสามตัวอย่าง}
+\begin{center}
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{@{}lccccccc@{}}
+\toprule
+ & $K_p$ & $e_{ss}$ & $T(0)$ & $M_r$ & $\omega_r$ & $\omega_b$ & $M_s$ \\
+\midrule
+ตัวอย่าง 1 & 7.81 & 0.113 & 0.887 & 5.36 (14.6 dB) & 6.54 & 9.58 & 5.87 \\
+ตัวอย่าง 2 & 2.34 & 0.299 & 0.701 & 1.10 (0.83 dB) & 3.00 & 4.61 & 1.75 \\
+ตัวอย่าง 3 & 3.30 & 0.233 & 0.767 & 1.06 (0.47 dB) & 4.32 & 6.63 & 1.69 \\
+\bottomrule
+\end{tabular}
+\end{center}
+ตัวอย่าง 1 มี PM เพียง $12^\circ$ จึงเกิดยอดสูงมากที่วงปิด ($M_r=5.36$, $M_s=5.87$) ผลตอบสนองจะแกว่งแรง ส่วนตัวอย่าง 2 และ 3 ที่ออกแบบให้ PM $\approx60^\circ$ มี $M_r\approx1.1$ และ $M_s\approx1.7$ ซึ่งเป็นช่วงที่ยอมรับได้ทั่วไป $K_p$ ต่ำของตัวอย่าง 2--3 แลกกับ $e_{ss}$ ที่สูงขึ้น (ถ้าต้องการลด $e_{ss}$ ต้องเพิ่ม integrator หรือเพิ่ม $K$ ซึ่งลด margin)
+
+\subsection{กราฟ Polar (Nyquist)}
+กราฟ Polar วาด $L(\jw)$ บนระนาบเชิงซ้อน (แกนนอน $\mathrm{Re}\,L$ แกนตั้ง $\mathrm{Im}\,L$) เมื่อ $\omega$ เพิ่มจาก $0$ ถึง $\infty$ อ่านค่าได้ดังนี้
+\begin{itemize}[leftmargin=1.2em,itemsep=2pt]
+\item $\omega=0$: จุดเริ่มต้นอยู่บนแกนจริงบวกที่ $K_p$ และ $\omega\to\infty$: เส้นโค้งเข้าสู่จุดกำเนิด
+\item $\omega_{gc}$: จุดที่เส้นโค้งตัดวงกลมหน่วย $|L|=1$ \; PM คือมุมจากแกนจริงลบไปถึงจุดนั้น
+\item $\omega_{pc}$: จุดที่เส้นโค้งตัดแกนจริงลบที่ $-|L(j\omega_{pc})|$ \; $\mathrm{GM}=\dfrac{1}{|L(j\omega_{pc})|}$ (เท่า)
+\item ระยะที่ใกล้จุด $-1$ ที่สุดคือ $1/M_s$
+\item ผลตอบสนองวงปิด: ค่า $|T|=M$ คงที่ตรงกับ \emph{M-circle} ศูนย์กลาง $\Big(\tfrac{M^2}{1-M^2},0\Big)$ รัศมี $\tfrac{M}{|1-M^2|}$ \; $M_r$ คือ M-circle ที่เส้นโค้งสัมผัสพอดี
+\end{itemize}
+
+\begin{figure}[h]
+\centering
+\input{fig_polar.tex}
+\caption{กราฟ Polar ของตัวอย่าง 1--3 (วงกลมทึบ = $\omega_{gc}$, สี่เหลี่ยม = $\omega_{pc}$, เส้นประ = วงกลมหน่วย) เส้นโค้งของตัวอย่าง 1 เข้าใกล้จุด $-1$ มากที่สุด จึงมี margin ต่ำ}
+\end{figure}
+
+ตัวอย่างค่าบนเส้นโค้งของตัวอย่าง 2 ($K=0.5614$):
+\begin{center}
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+จุด & $\omega$ & $\mathrm{Re}\,L$ & $\mathrm{Im}\,L$ & $|L|$ (dB) & $\angle L$ ($^\circ$) \\
+\midrule
+เริ่มต้น & $\approx0$ & $2.339$ & $0$ & $7.38$ & $0$ \\
+ & $1$ & $0.991$ & $-1.651$ & $5.69$ & $-59.0$ \\
+$\omega_{gc}$ & $2.41$ & $-0.500$ & $-0.866$ & $0.00$ & $-120.0$ \\
+$\omega_r$ & $3.00$ & $-0.547$ & $-0.488$ & $-2.69$ & $-138.2$ \\
+$\omega_b$ & $4.61$ & $-0.330$ & $-0.043$ & $-9.56$ & $-172.6$ \\
+$\omega_{pc}$ & $5.10$ & $-0.267$ & $0$ & $-11.46$ & $-180.0$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+ที่ $\omega_{gc}$ ได้ $L=e^{-j120^\circ}=-0.5-j0.866$ ตรงกับ PM $=60^\circ$ และที่ $\omega_{pc}$ เส้นโค้งตัดแกนจริงลบที่ $-0.267$ ซึ่ง $1/0.267=3.74$ เท่า $=11.5$ dB (GM)
+
+\subsection{กราฟ Nichols}
+กราฟ Nichols วาด $|L(\jw)|$ (dB, แกนตั้ง) กับ $\angle L(\jw)$ (องศา, แกนนอน) โดยไม่ต้องคำนวณ $T$ เพิ่ม เพราะบนกราฟมีเส้นชั้น (contour) ของ $|T|=M$ คงที่ซ้อนอยู่ อ่านค่าได้ดังนี้
+\begin{itemize}[leftmargin=1.2em,itemsep=2pt]
+\item จุดวิกฤตคือ $(-180^\circ,\,0\ \mathrm{dB})$ (เทียบกับ $-1$ ในกราฟ Polar)
+\item PM: ที่จุดตัดเส้น $0$ dB วัดระยะแนวนอนจาก $-180^\circ$ \; GM: ที่จุดตัดเส้น $-180^\circ$ วัดระยะแนวตั้งถึง $0$ dB
+\item $M_r$: contour ที่ใหญ่ที่สุดที่เส้นโค้งสัมผัสพอดี ($\omega_r$ คือความถี่ ณ จุดสัมผัส)
+\item $\omega_b$: ความถี่ที่เส้นโค้งตัด contour ของ $|T|=T(0)/\sqrt2$ (ในตัวอย่าง 2 คือ $0.7005/\sqrt2=0.495$ หรือ $-6.10$ dB)
+\item contour ที่เป็นวงปิดรอบ $(-180^\circ,0\ \mathrm{dB})$ คือ $|T|>0$ dB ยิ่งวงเล็ก ค่า $M$ ยิ่งสูง
+\end{itemize}
+
+\begin{figure}[h]
+\centering
+\input{fig_nichols2.tex}
+\caption{กราฟ Nichols ของตัวอย่าง 2 พร้อม contour ของ $|T|$ (dB) เส้นสีแดง $=M_r=0.83$ dB ซึ่งสัมผัสเส้นโค้งที่ $\omega_r=3.00$ และเส้นสีเขียว $=-6.10$ dB ซึ่งตัดเส้นโค้งที่ $\omega_b=4.61$}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\input{fig_nichols3.tex}
+\caption{เปรียบเทียบ Nichols ของตัวอย่าง 1--3 (วงกลมทึบ = $\omega_{gc}$, สี่เหลี่ยม = $\omega_{pc}$) ตัวอย่าง 1 เข้าใกล้จุดวิกฤตมากที่สุดและตัด contour ที่สูงถึงประมาณ $14.6$ dB จึงสอดคล้องกับ $M_r=5.36$}
+\end{figure}
+
+\subsection{ความผิดพลาดสถานะอยู่ตัว $e_{ss}$: คำนวณและอ่านจากกราฟ}
+
+\paragraph{หลักการ}
+สำหรับ unity feedback ความผิดพลาด $E(s)=\dfrac{R(s)}{1+L(s)}$ จึงใช้ final value theorem กับอินพุต step หน่วย $R(s)=1/s$:
+\[
+e_{ss}=\lim_{s\to0}\frac{s\cdot\frac1s}{1+L(s)}=\frac{1}{1+L(0)}=\frac{1}{1+K_p},
+\qquad K_p=\lim_{s\to0}L(s).
+\]
+ค่า $K_p$ หาได้โดยแทน $s=0$ (ใส่ค่าคงที่ของทุกตัวประกอบ) และความสัมพันธ์กับวงปิดคือ $T(0)=\dfrac{K_p}{1+K_p}=1-e_{ss}$
+
+\begin{center}
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+ประเภทของระบบ (จำนวน pole ที่ $s=0$) & step & ramp & parabola \\
+\midrule
+ประเภท 0 & $\dfrac{1}{1+K_p}$ & $\infty$ & $\infty$ \\
+ประเภท 1 & $0$ & $\dfrac{1}{K_v}$, $K_v=\lim sL$ & $\infty$ \\
+ประเภท 2 & $0$ & $0$ & $\dfrac{1}{K_a}$, $K_a=\lim s^2L$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+ระบบในตัวอย่าง 1--3 ไม่มี pole ที่ $s=0$ (ประเภท 0) จึงมี $e_{ss}$ ค่าจำกัดและไม่เป็นศูนย์ต่อ step
+
+\paragraph{คำนวณจากสมการ}
+\begin{center}
+\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+ & $K_p=L(0)$ & $20\log_{10}K_p$ (dB) & $e_{ss}=\dfrac{1}{1+K_p}$ & $T(0)=1-e_{ss}$ \\
+\midrule
+ตัวอย่าง 1 & $\dfrac{500}{2\cdot4\cdot8}=7.8125$ & $17.85$ & $0.1135$ ($11.3\%$) & $0.8865$ \\
+ตัวอย่าง 2 & $\dfrac{100(0.5614)}{2\cdot3\cdot4}=2.339$ & $7.38$ & $0.2995$ ($30.0\%$) & $0.7005$ \\
+ตัวอย่าง 3 & $\dfrac{100(1.979)\cdot2}{1\cdot4\cdot5\cdot6}=3.298$ & $10.37$ & $0.2326$ ($23.3\%$) & $0.7674$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+(ตัวอย่าง 3 มี zero $(s+2)$ ในตัวเศษ จึงเข้าไปคูณ $2$ ตอนแทน $s=0$)
+
+\paragraph{อ่านจากกราฟ}
+\begin{enumerate}[leftmargin=1.6em,itemsep=2pt]
+\item \textbf{Bode (ขนาด)}: อ่านระดับ ``ที่ราบ'' ที่ความถี่ต่ำสุดในหน่วย dB แล้วแปลงเป็นเท่า $K_p=10^{\mathrm{dB}/20}$ เช่น ตัวอย่าง 2 ที่ราบอยู่ที่ $7.4$ dB $\Rightarrow K_p=10^{7.4/20}=2.34\Rightarrow e_{ss}=1/3.34=0.30$ (ดูรูปที่ 2)
+\item \textbf{Polar}: จุดเริ่มต้นที่ $\omega=0$ อยู่บนแกนจริงบวกที่ $\mathrm{Re}\,L=K_p$ ตัวอย่าง 2 เริ่มที่ $2.34$ (ดูรูปที่ 4) เส้นโค้งที่เริ่มไกลจากจุดกำเนิดแปลว่า $K_p$ สูง $e_{ss}$ ต่ำ
+\item \textbf{Nichols}: จุดเริ่มต้นอยู่ที่ขอบขวา (เฟส $0^\circ$) และสูงเท่ากับ $20\log_{10}K_p$ dB ตัวอย่าง 2 อยู่ที่ $7.4$ dB (ดูรูปที่ 5)
+\item \textbf{ผลตอบสนอง step วงปิด}: อ่านค่าสุดท้าย $y(\infty)$ แล้ว $e_{ss}=1-y(\infty)$ คือช่องว่างระหว่างเส้นอ้างอิง $r=1$ กับค่าสุดท้าย (รูปที่ 7) ตัวอย่าง 2 ได้ $y(\infty)=0.70\Rightarrow e_{ss}=0.30$
+\item \textbf{กราฟ $|T|$}: ค่า $|T(0)|$ ที่ความถี่ต่ำ (ที่ราบของ $|T|$) $=1-e_{ss}$ เช่นกัน
+\end{enumerate}
+
+\begin{figure}[h]
+\centering
+\input{fig_step.tex}
+\caption{ผลตอบสนอง step หน่วยของวงปิด เส้นประสีเดียวกับเส้นโค้งคือ $T(0)$ ช่องว่างถึง $r=1$ คือ $e_{ss}$ ตัวอย่าง 1 แกว่งแรง (PM ต่ำ) และยังไม่นิ่งครบที่ $t=10$ s}
+\end{figure}
+
+\paragraph{ข้อสังเกต: ลด $e_{ss}$ ด้วยเกนอย่างเดียวไม่ได้}
+ถ้าต้องการ $e_{ss}\le5\%$ ในตัวอย่าง 2 ต้องการ $K_p\ge19$ ซึ่งต้อง $K=19\cdot24/100=4.56$ แต่ค่าวิกฤตของระบบนี้คือ $K_{\text{crit}}=2.1$ (จาก Routh ในหัวข้อ 4) จึงไม่เสถียร แปลว่าตัวควบคุมสัดส่วนล้วนให้ทั้ง margin และ $e_{ss}$ ต่ำไม่ได้ ต้องเพิ่ม integrator (ระบบประเภท 1 ได้ $e_{ss}=0$ ต่อ step) ซึ่งเป็นหัวข้อของการออกแบบตัวควบคุม PI/PID
+
+\subsection{สรุปขั้นตอนอ่านข้อกำหนดจากกราฟ}
+\begin{center}
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{@{}p{3.2cm}p{6.2cm}p{6.2cm}@{}}
+\toprule
+ข้อกำหนด & Polar & Nichols \\
+\midrule
+PM & มุมของจุดตัดวงกลมหน่วยจากแกนจริงลบ & ระยะแนวนอนที่เส้น $0$ dB ถึง $-180^\circ$ \\
+GM & $1/|\text{จุดตัดแกนจริงลบ}|$ & ระยะแนวตั้งที่ $-180^\circ$ ถึง $0$ dB \\
+$M_r$, $\omega_r$ & M-circle ที่เส้นโค้งสัมผัส & contour ที่เส้นโค้งสัมผัส \\
+$\omega_b$ & จุดที่ $|T|=T(0)/\sqrt2$ & จุดตัด contour ที่ $T(0)/\sqrt2$ \\
+$1/M_s$ & ระยะใกล้สุดถึงจุด $-1$ (อ่านตรงจากกราฟได้) & อ่านตรงไม่สะดวก ให้คำนวณ $\min|1+L|$ แทน \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%=====================================================================
+\section{เปรียบเทียบทั้งสามตัวอย่าง}
+\begin{center}
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+ตัวอย่าง & $K$ & $\omega_{pc}$ & GM (dB) & $\omega_{gc}$ & PM ($^\circ$) & โจทย์ \\
+\midrule
+1 & (500 ในพลานต์) & 7.48 & 3.17 & 6.29 & 12.0 & หา GM, PM \\
+2 & 0.561 & 5.10 & 11.5 & 2.41 & 60.0 & ออกแบบจาก PM \\
+3 & 1.979 & 7.83 & 12.0 & 3.42 & 61.4 & ออกแบบจาก GM \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{ข้อสังเกต}
+\begin{itemize}[leftmargin=1.2em,itemsep=2pt]
+\item ตัวอย่าง 1 มี margin ต่ำทั้งคู่ ส่วนตัวอย่าง 2--3 ออกแบบให้มี margin ตามเป้า (GM ประมาณ 12 dB, PM ประมาณ $60^\circ$ เป็นช่วงที่นิยมใช้)
+\item GM และ PM มักไปด้วยกัน: เพิ่ม $K$ ทำให้ $\omega_{gc}$ ขยับขึ้นและทั้งสอง margin ลดลง
+\item GM และ PM วัดที่ ``จุดเดียว'' ของวงรอบ ไม่รับประกันความทนทานเสมอไป ควรดูร่วมกับ peak ของ sensitivity $M_s$ และผลตอบสนองเวลาด้วย (เช่นในชุดสไลด์ PID Tuner กับ TCLab)
+\end{itemize}
+
+%=====================================================================
+\section{แบบฝึกหัดพร้อมเฉลย}
+\begin{exbox}{แบบฝึกหัด A}
+จากตัวอย่าง 1 ต้องคูณ gain ของพลานต์ด้วยเท่าใด (หรือเปลี่ยน $500$ เป็นเท่าใด) เพื่อให้ GM $=10$ dB และ PM ที่ได้เป็นเท่าใด
+\end{exbox}
+\textbf{เฉลย:} ต้องลด gain ลง $10-3.17=6.83$ dB คือคูณด้วย $10^{-6.83/20}=0.455$ ได้ gain ใหม่ $500\times0.455\approx228$ ($\omega_{pc}$ เท่าเดิมที่ $7.48$) หา $\omega_{gc}$ ใหม่ได้ $\approx4.02$ rad/s และ PM $\approx45^\circ$
+
+\begin{exbox}{แบบฝึกหัด B}
+จากตัวอย่าง 2 ถ้าเพิ่ม $K$ เป็นสองเท่า ($K\approx1.12$) GM และ PM เปลี่ยนเป็นเท่าใด
+\end{exbox}
+\textbf{เฉลย:} GM ลดลง $20\log_{10}2=6.02$ dB เหลือ $11.46-6.02\approx5.4$ dB ส่วน $\omega_{gc}$ ขยับขึ้นเป็น $\approx3.76$ rad/s ทำให้ PM ตกลงเหลือ $\approx23^\circ$ จะเห็นว่า PM ไวต่อการเพิ่ม gain มาก
+
+\begin{exbox}{แบบฝึกหัด C (ความเข้าใจ)}
+ทำไมเมื่อออกแบบจาก GM จึงหา $\omega_{pc}$ ได้ก่อนรู้ค่า $K$ แต่เมื่อออกแบบจาก PM ต้องหาความถี่จากเฟสที่ต้องการก่อนแล้วจึงหา $K$
+\end{exbox}
+\textbf{เฉลย:} $K$ เป็นค่าคงที่จริงบวก จึงไม่เปลี่ยนเฟสของ $L$ ดังนั้นความถี่ที่เฟสเท่ากับค่าใด ๆ ไม่ขึ้นกับ $K$ ทั้งกรณี GM (เฟส $-180^\circ$) และกรณี PM (เฟส $-180^\circ+\mathrm{PM}$) เมื่อได้ความถี่แล้ว จึงใช้เงื่อนไขขนาด ($|L|=10^{-\mathrm{GM}/20}$ หรือ $|L|=1$) แก้หา $K$
+
+%=====================================================================
+\section{คำสั่ง MATLAB}
+สคริปต์ \texttt{gm\_pm\_examples.m} คำนวณทุกค่าในตัวอย่าง 1--3 และวาดกราฟ Bode, Polar และ Nichols (ต้องมี Control System Toolbox) ผมรันบน MATLAB R2026a แล้ว ผลตรงกับตัวเลขในเอกสาร
+
+\subsection{ฟังก์ชันที่ใช้}
+\begin{center}
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{@{}>{\raggedright}p{4.6cm}>{\raggedright\arraybackslash}p{11cm}@{}}
+\toprule
+คำสั่ง & ใช้ทำอะไร \\
+\midrule
+\texttt{tf('s')}, \texttt{feedback(L,1)} & สร้างตัวแปร $s$ และวงปิด $T=L/(1+L)$ (\texttt{feedback(1,L)} ได้ $S$) \\
+\texttt{margin(L)} & คืน GM (\emph{เป็นอัตราส่วน ไม่ใช่ dB}), PM (องศา), $\omega_{pc}$, $\omega_{gc}$ ถ้าไม่ใส่ผลลัพธ์จะวาด Bode พร้อมขีดบอก margin \\
+\texttt{allmargin(L)} & margin ทุกจุด (กรณีมี crossover หลายตัว) \\
+\texttt{freqresp}, \texttt{bode} & ค่าเชิงซ้อน $L(\jw)$ และขนาด/เฟส (\texttt{bode} คืนเฟสแบบ unwrap ใช้กับ \texttt{fzero} ได้ ส่วน \texttt{angle} จะ wrap ที่ $\pm180^\circ$) \\
+\texttt{fzero} & แก้เงื่อนไขเฟส เช่น $\angle L=-120^\circ$ (ออกแบบจาก PM) หรือ $-180^\circ$ (ออกแบบจาก GM) \\
+\texttt{dcgain} & $K_p=L(0)$ และ $T(0)$ \\
+\texttt{getPeakGain(T,tol,fband)} & $M_r$ และ $\omega_r$ (และ $M_s$ เมื่อใช้กับ $S$) \\
+\texttt{bandwidth(T)} & $\omega_b$ ที่ $|T|$ ตก $3$ dB จากค่า DC (ตรงกับนิยามในหัวข้อ 5) \\
+\texttt{nyquist(L)}, \texttt{nichols(L)}, \texttt{ngrid} & กราฟ Polar/Nyquist และ Nichols พร้อม M-contour \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{แนวคิดของการออกแบบ $K$}
+\begin{itemize}[leftmargin=1.2em,itemsep=2pt]
+\item ตัวอย่าง 2 (ออกแบบจาก PM): หา $\omega_{gc}$ จาก $\angle G=-180^\circ+60^\circ$ แล้ว $K=1/|G(j\omega_{gc})|$
+\item ตัวอย่าง 3 (ออกแบบจาก GM): หา $\omega_{pc}$ จาก $\angle G=-180^\circ$ แล้ว $K=10^{-12/20}/|G(j\omega_{pc})|$
+\end{itemize}
+
+\subsection{โค้ด}
+{\scriptsize
+\verbatiminput{gm_pm_examples.m}
+}
+
+\subsection{ผลลัพธ์ที่ได้}
+{\scriptsize
+\verbatiminput{matlab_output.txt}
+}
+
+
+\end{document}
