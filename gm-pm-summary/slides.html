@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gain Margin และ Phase Margin</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;600;700&display=swap"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+html,body{margin:0;height:100%;background:#0b1220;overflow:hidden}
+#stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:0 0}
+#stage section{display:none !important;position:relative;width:1920px;height:1080px;box-sizing:border-box;overflow:hidden}
+#stage section.on{display:flex !important}
+h1,h2,h3,p,ul,ol{margin:0}
+table{border-collapse:collapse;width:100%}
+td,th{padding:12px 16px;border-bottom:1px solid #D8D6CC}
+#hud{position:fixed;right:16px;bottom:12px;color:#8FA3C8;font:14px sans-serif;user-select:none}
+#notes{position:fixed;left:0;right:0;bottom:0;max-height:30vh;overflow:auto;background:#000c;color:#eee;font:16px/1.5 'IBM Plex Sans Thai',sans-serif;padding:12px 24px;display:none}
+</style></head><body>
+<div id="stage">
+<section id="cover" data-transition="fade" style="background:#14213D;color:#F7F6F1;font-family:'IBM Plex Sans Thai', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;justify-content:center;gap:36px">
+<div style="position:absolute;left:1180px;top:200px;width:560px;height:560px;border:6px dashed #5B7BB8;border-radius:50%"></div>
+<div style="position:absolute;left:1180px;top:470px;width:30px;height:30px;background:#E8A25A;border-radius:50%"></div>
+<p style="font-size:30px;font-weight:600;color:#E8A25A;letter-spacing:2px">CONTROL SYSTEMS</p>
+<h1 style="font-size:112px;font-weight:700;line-height:1.1;width:1100px">Gain Margin และ Phase Margin</h1>
+<p style="font-size:40px;line-height:1.4;color:#C9D3E8;width:1000px">อธิบายหลักการ ตัวอย่างคำนวณทีละขั้น และการอ่านค่าจากกราฟ Bode, Polar และ Nichols</p>
+<p style="font-size:32px;color:#8FA3C8;width:1000px">วงเปิด (OL) · วงปิด (CL) · ess · MATLAB</p>
+</section>
+<section id="why" data-transition="fade" style="background:#F7F6F1;color:#14213D;font-family:'IBM Plex Sans Thai', Arial, sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:44px">
+<h2 style="font-size:64px;font-weight:700;line-height:1.15">Margin คือระยะห่างจากความไม่เสถียร</h2>
+<div style="display:flex;gap:32px">
+<div style="flex:1;display:flex;flex-direction:column;gap:16px;background:#FFFFFF;padding:44px;border:1px solid #E1DFD3;border-radius:20px">
+<h3 style="font-size:40px;font-weight:600;color:#1F5FBF">1  Loop gain</h3>
+<p style="font-size:34px;line-height:1.4">L(jω) = K · G(jω) แทน s = jω แล้วดูขนาดและเฟสที่แต่ละความถี่</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:16px;background:#FFFFFF;padding:44px;border:1px solid #E1DFD3;border-radius:20px">
+<h3 style="font-size:40px;font-weight:600;color:#1F5FBF">2  จุดวิกฤต</h3>
+<p style="font-size:34px;line-height:1.4">วงปิดเสถียรเมื่อ L(jω) ไม่ล้อมจุด −1 ซึ่งมีขนาด 1 และเฟส −180°</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:16px;background:#FFFFFF;padding:44px;border:1px solid #E1DFD3;border-radius:20px">
+<h3 style="font-size:40px;font-weight:600;color:#1F5FBF">3  ระยะปลอดภัย</h3>
+<p style="font-size:34px;line-height:1.4">GM คือเพิ่มเกนได้อีกกี่เท่า และ PM คือหน่วงเฟสได้อีกกี่องศา ก่อนถึงจุดวิกฤต</p>
+</div>
+</div>
+<div style="border-left:10px solid #D9622B;padding:12px 0 12px 36px;background:#FBF1EA">
+<p style="font-size:38px;line-height:1.4;font-weight:600">margin มากขึ้น = ระบบทนต่อความคลาดเคลื่อนของโมเดลและเวลาหน่วงได้มากขึ้น</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5B6475">Gain Margin และ Phase Margin · 2</p>
+</section>
+<section id="defs" data-transition="fade" style="background:#F7F6F1;color:#14213D;font-family:'IBM Plex Sans Thai', Arial, sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<h2 style="font-size:64px;font-weight:700;line-height:1.15">นิยามของ GM และ PM</h2>
+<div style="display:flex;gap:32px">
+<div style="flex:1;display:flex;flex-direction:column;gap:20px;background:#FFFFFF;padding:44px;border:1px solid #E1DFD3;border-radius:20px">
+<h3 style="font-size:44px;font-weight:600;color:#1F5FBF">Gain Margin (GM)</h3>
+<p style="font-size:34px;line-height:1.4">ดูที่ ωpc ความถี่ซึ่งเฟส ∠L = −180°</p>
+<p style="font-size:42px;font-weight:600;background:#EEF3FB;padding:24px 28px;border-radius:12px;line-height:1.3">GM = −20 log10 |L(jωpc)| dB</p>
+<p style="font-size:34px;line-height:1.4;color:#3B465C">เพิ่มเกนได้อีกกี่ dB ก่อนถึงขอบความไม่เสถียร</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:20px;background:#FFFFFF;padding:44px;border:1px solid #E1DFD3;border-radius:20px">
+<h3 style="font-size:44px;font-weight:600;color:#1F5FBF">Phase Margin (PM)</h3>
+<p style="font-size:34px;line-height:1.4">ดูที่ ωgc ความถี่ซึ่ง |L| = 1 (0 dB)</p>
+<p style="font-size:42px;font-weight:600;background:#EEF3FB;padding:24px 28px;border-radius:12px;line-height:1.3">PM = 180° + ∠L(jωgc)</p>
+<p style="font-size:34px;line-height:1.4;color:#3B465C">หน่วงเฟสได้อีกกี่องศา ก่อนเฟสถึง −180°</p>
+</div>
+</div>
+<div style="border-left:10px solid #D9622B;padding:12px 0 12px 36px;background:#FBF1EA">
+<p style="font-size:36px;line-height:1.4;font-weight:600">GM &gt; 0 dB และ PM &gt; 0° ทั้งคู่ วงปิดเสถียร (สำหรับระบบแบบที่ใช้ในตัวอย่าง)</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5B6475">Gain Margin และ Phase Margin · 3</p>
+</section>
+<section id="procedure" data-transition="fade" style="background:#F7F6F1;color:#14213D;font-family:'IBM Plex Sans Thai', Arial, sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<h2 style="font-size:64px;font-weight:700;line-height:1.15">ขั้นตอนคำนวณ 5 ขั้น</h2>
+<div style="display:flex;gap:40px">
+<div style="flex:1.2;display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;gap:24px;align-items:center"><p style="width:64px;height:64px;background:#1F5FBF;color:#FFFFFF;font-size:36px;font-weight:700;text-align:center;line-height:64px;border-radius:50%">1</p><p style="font-size:36px;line-height:1.3">เขียน L(s) = K · G(s)</p></div>
+<div style="display:flex;gap:24px;align-items:center"><p style="width:64px;height:64px;background:#1F5FBF;color:#FFFFFF;font-size:36px;font-weight:700;text-align:center;line-height:64px;border-radius:50%">2</p><p style="font-size:36px;line-height:1.3">แทน s = jω เขียน |L| และ ∠L</p></div>
+<div style="display:flex;gap:24px;align-items:center"><p style="width:64px;height:64px;background:#1F5FBF;color:#FFFFFF;font-size:36px;font-weight:700;text-align:center;line-height:64px;border-radius:50%">3</p><p style="font-size:36px;line-height:1.3"><b>GM:</b> ∠L = −180° → ωpc → |L| → dB</p></div>
+<div style="display:flex;gap:24px;align-items:center"><p style="width:64px;height:64px;background:#1F5FBF;color:#FFFFFF;font-size:36px;font-weight:700;text-align:center;line-height:64px;border-radius:50%">4</p><p style="font-size:36px;line-height:1.3"><b>PM:</b> |L| = 1 → ωgc → ∠L → 180° + ∠L</p></div>
+<div style="display:flex;gap:24px;align-items:center"><p style="width:64px;height:64px;background:#1F5FBF;color:#FFFFFF;font-size:36px;font-weight:700;text-align:center;line-height:64px;border-radius:50%">5</p><p style="font-size:36px;line-height:1.3">โจทย์ออกแบบ: ปรับ K ให้ได้ GM หรือ PM ที่ต้องการ</p></div>
+</div>
+<div style="flex:0.8;display:flex;flex-direction:column;gap:18px;background:#FFFFFF;padding:40px;border:1px solid #E1DFD3;border-radius:20px">
+<h3 style="font-size:40px;font-weight:600;color:#1F5FBF">ตัวประกอบ (jω + a)</h3>
+<p style="font-size:34px;line-height:1.4">ขนาด = √(ω² + a²)</p>
+<p style="font-size:34px;line-height:1.4">เฟส = arctan(ω / a)</p>
+<p style="font-size:32px;line-height:1.4;color:#3B465C">ตัวเศษ: เฟสบวก<br>ตัวส่วน: เฟสลบ<br>ค่าคงที่ เช่น 500: เฟส 0°</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5B6475">Gain Margin และ Phase Margin · 4</p>
+</section>
+<section id="design" data-transition="fade" style="background:#F7F6F1;color:#14213D;font-family:'IBM Plex Sans Thai', Arial, sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<h2 style="font-size:64px;font-weight:700;line-height:1.15">ออกแบบ K จาก PM หรือ GM</h2>
+<p style="font-size:36px;line-height:1.4;color:#3B465C">K เป็นค่าคงที่จริงบวก จึงเลื่อนกราฟขนาดขึ้นหรือลงทั้งเส้น แต่ไม่เปลี่ยนเฟส</p>
+<div style="display:flex;gap:32px">
+<div style="flex:1;display:flex;flex-direction:column;gap:18px;background:#FFFFFF;padding:44px;border:1px solid #E1DFD3;border-radius:20px">
+<h3 style="font-size:42px;font-weight:600;color:#1F5FBF">กำหนด PM (ตัวอย่าง 2)</h3>
+<p style="font-size:34px;line-height:1.4"><b>1</b>  หา ω ที่ ∠L = −180° + PM เช่น PM = 60° → −120°</p>
+<p style="font-size:34px;line-height:1.4"><b>2</b>  บังคับ |L(jω)| = 1 ที่ความถี่นั้น แล้วแก้หา K</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:18px;background:#FFFFFF;padding:44px;border:1px solid #E1DFD3;border-radius:20px">
+<h3 style="font-size:42px;font-weight:600;color:#1F5FBF">กำหนด GM (ตัวอย่าง 3)</h3>
+<p style="font-size:34px;line-height:1.4"><b>1</b>  หา ωpc จาก ∠L = −180° (ไม่ขึ้นกับ K)</p>
+<p style="font-size:34px;line-height:1.4"><b>2</b>  บังคับ |L(jωpc)| = 10^(−GM/20) เช่น 12 dB → 0.251</p>
+</div>
+</div>
+<div style="border-left:10px solid #D9622B;padding:12px 0 12px 36px;background:#FBF1EA">
+<p style="font-size:34px;line-height:1.4"><b>ทางลัด</b> เมื่อมี pole จริง 3 ตัวและไม่มี zero: ωpc² = a1·a2 + a1·a3 + a2·a3 ตัวอย่าง 1 ได้ 56 และตัวอย่าง 2 ได้ 26</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5B6475">Gain Margin และ Phase Margin · 5</p>
+</section>
+<section id="ex1" data-transition="fade" style="background:#F7F6F1;color:#14213D;font-family:'IBM Plex Sans Thai', Arial, sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<h2 style="font-size:64px;font-weight:700;line-height:1.15">ตัวอย่าง 1: วงเปิด หา GM และ PM</h2>
+<div style="display:flex;gap:40px">
+<div style="flex:1.45;display:flex;flex-direction:column;gap:22px">
+<p style="font-size:44px;font-weight:600;background:#EEF3FB;padding:22px 30px;border-radius:12px">L(s) = 500 / ((s+2)(s+4)(s+8))</p>
+<div style="background:#FFFFFF;padding:30px 36px;border:1px solid #E1DFD3;border-radius:16px;display:flex;flex-direction:column;gap:8px">
+<p style="font-size:32px;font-weight:600;color:#1F5FBF">GM</p>
+<p style="font-size:34px;line-height:1.4">ωpc² = 2·4 + 2·8 + 4·8 = 56 → ωpc = 7.48 rad/s</p>
+<p style="font-size:34px;line-height:1.4">|L| = 500 / 720 = 0.694 → −3.17 dB</p>
+</div>
+<div style="background:#FFFFFF;padding:30px 36px;border:1px solid #E1DFD3;border-radius:16px;display:flex;flex-direction:column;gap:8px">
+<p style="font-size:32px;font-weight:600;color:#1F5FBF">PM</p>
+<p style="font-size:34px;line-height:1.4">|L| = 1 → ωgc = 6.29 rad/s, ∠L ≈ −168°</p>
+<p style="font-size:34px;line-height:1.4">PM = 180° + (−168°) ≈ 12°</p>
+</div>
+</div>
+<div style="flex:0.75;display:flex;flex-direction:column;gap:22px">
+<div style="background:#14213D;color:#F7F6F1;padding:34px 40px;border-radius:16px;display:flex;flex-direction:column;gap:6px">
+<p style="font-size:30px;color:#9FB2D6">Gain margin</p>
+<p style="font-size:84px;font-weight:700;line-height:1.05">3.17 dB</p>
+</div>
+<div style="background:#14213D;color:#F7F6F1;padding:34px 40px;border-radius:16px;display:flex;flex-direction:column;gap:6px">
+<p style="font-size:30px;color:#9FB2D6">Phase margin</p>
+<p style="font-size:84px;font-weight:700;line-height:1.05">12°</p>
+</div>
+<p style="font-size:30px;line-height:1.4;color:#B8501F;font-weight:600">ทั้งสองค่าต่ำมาก วงปิดแกว่งแรง</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5B6475">Gain Margin และ Phase Margin · 6</p>
+</section>
+<section id="ex2" data-transition="fade" style="background:#F7F6F1;color:#14213D;font-family:'IBM Plex Sans Thai', Arial, sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<h2 style="font-size:64px;font-weight:700;line-height:1.15">ตัวอย่าง 2: ออกแบบ K จาก PM = 60°</h2>
+<div style="display:flex;gap:40px">
+<div style="flex:1.45;display:flex;flex-direction:column;gap:22px">
+<p style="font-size:44px;font-weight:600;background:#EEF3FB;padding:22px 30px;border-radius:12px">L(s) = 100K / ((s+2)(s+3)(s+4))</p>
+<div style="background:#FFFFFF;padding:30px 36px;border:1px solid #E1DFD3;border-radius:16px;display:flex;flex-direction:column;gap:8px">
+<p style="font-size:32px;font-weight:600;color:#1F5FBF">หา K จาก PM</p>
+<p style="font-size:34px;line-height:1.4">∠L = −120° → ωgc = 2.41 rad/s</p>
+<p style="font-size:34px;line-height:1.4">|L| = 1 ที่ ωgc → K = 0.56</p>
+</div>
+<div style="background:#FFFFFF;padding:30px 36px;border:1px solid #E1DFD3;border-radius:16px;display:flex;flex-direction:column;gap:8px">
+<p style="font-size:32px;font-weight:600;color:#1F5FBF">แล้วหา GM ที่ K นั้น</p>
+<p style="font-size:34px;line-height:1.4">ωpc² = 6 + 8 + 12 = 26 → ωpc = 5.10 rad/s</p>
+<p style="font-size:34px;line-height:1.4">|L| = 0.267 → −11.5 dB → GM = 11.5 dB</p>
+</div>
+</div>
+<div style="flex:0.75;display:flex;flex-direction:column;gap:22px">
+<div style="background:#14213D;color:#F7F6F1;padding:30px 40px;border-radius:16px;display:flex;flex-direction:column;gap:6px">
+<p style="font-size:30px;color:#9FB2D6">เกนที่ออกแบบ</p>
+<p style="font-size:72px;font-weight:700;line-height:1.05">K = 0.56</p>
+</div>
+<div style="background:#14213D;color:#F7F6F1;padding:30px 40px;border-radius:16px;display:flex;flex-direction:column;gap:6px">
+<p style="font-size:30px;color:#9FB2D6">Phase margin</p>
+<p style="font-size:72px;font-weight:700;line-height:1.05">60°</p>
+</div>
+<div style="background:#14213D;color:#F7F6F1;padding:30px 40px;border-radius:16px;display:flex;flex-direction:column;gap:6px">
+<p style="font-size:30px;color:#9FB2D6">Gain margin</p>
+<p style="font-size:72px;font-weight:700;line-height:1.05">11.5 dB</p>
+</div>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5B6475">Gain Margin และ Phase Margin · 7</p>
+</section>
+<section id="ex3" data-transition="fade" style="background:#F7F6F1;color:#14213D;font-family:'IBM Plex Sans Thai', Arial, sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<h2 style="font-size:64px;font-weight:700;line-height:1.15">ตัวอย่าง 3: ออกแบบ K จาก GM = 12 dB</h2>
+<div style="display:flex;gap:40px">
+<div style="flex:1.45;display:flex;flex-direction:column;gap:22px">
+<p style="font-size:40px;font-weight:600;background:#EEF3FB;padding:22px 30px;border-radius:12px">L(s) = 100K (s+2) / ((s+1)(s+4)(s+5)(s+6))</p>
+<div style="background:#FFFFFF;padding:30px 36px;border:1px solid #E1DFD3;border-radius:16px;display:flex;flex-direction:column;gap:8px">
+<p style="font-size:32px;font-weight:600;color:#1F5FBF">หา K จาก GM</p>
+<p style="font-size:34px;line-height:1.4">ωpc = 7.83 rad/s (ใช้ solver เพราะมี zero)</p>
+<p style="font-size:34px;line-height:1.4">|L(jωpc)| = 10^(−12/20) = 0.251 → K = 1.98</p>
+</div>
+<div style="background:#FFFFFF;padding:30px 36px;border:1px solid #E1DFD3;border-radius:16px;display:flex;flex-direction:column;gap:8px">
+<p style="font-size:32px;font-weight:600;color:#1F5FBF">แล้วหา PM ที่ K นั้น</p>
+<p style="font-size:34px;line-height:1.4">|L| = 1 → ωgc = 3.42 rad/s, ∠L ≈ −119°</p>
+<p style="font-size:34px;line-height:1.4">PM = 180° − 119° ≈ 61°</p>
+</div>
+</div>
+<div style="flex:0.75;display:flex;flex-direction:column;gap:22px">
+<div style="background:#14213D;color:#F7F6F1;padding:30px 40px;border-radius:16px;display:flex;flex-direction:column;gap:6px">
+<p style="font-size:30px;color:#9FB2D6">K สูงสุดที่ยังได้ GM 12 dB</p>
+<p style="font-size:72px;font-weight:700;line-height:1.05">K = 1.98</p>
+</div>
+<div style="background:#14213D;color:#F7F6F1;padding:30px 40px;border-radius:16px;display:flex;flex-direction:column;gap:6px">
+<p style="font-size:30px;color:#9FB2D6">Gain margin</p>
+<p style="font-size:72px;font-weight:700;line-height:1.05">12 dB</p>
+</div>
+<div style="background:#14213D;color:#F7F6F1;padding:30px 40px;border-radius:16px;display:flex;flex-direction:column;gap:6px">
+<p style="font-size:30px;color:#9FB2D6">Phase margin</p>
+<p style="font-size:72px;font-weight:700;line-height:1.05">61°</p>
+</div>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5B6475">Gain Margin และ Phase Margin · 8</p>
+</section>
+<section id="compare" data-transition="fade" style="background:#F7F6F1;color:#14213D;font-family:'IBM Plex Sans Thai', Arial, sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<h2 style="font-size:64px;font-weight:700;line-height:1.15">เปรียบเทียบทั้งสามตัวอย่าง</h2>
+<table style="font-size:34px;color:#14213D">
+<tr><th style="width:14%;text-align:left;font-weight:700">ตัวอย่าง</th><th style="width:14%;text-align:right;font-weight:700">K</th><th style="width:14%;text-align:right;font-weight:700">ωpc</th><th style="width:14%;text-align:right;font-weight:700">GM (dB)</th><th style="width:14%;text-align:right;font-weight:700">ωgc</th><th style="width:14%;text-align:right;font-weight:700">PM (°)</th><th style="width:16%;text-align:left;font-weight:700">โจทย์</th></tr>
+<tr><td style="text-align:left">1</td><td style="text-align:right">500 (ในพลานต์)</td><td style="text-align:right">7.48</td><td style="text-align:right">3.17</td><td style="text-align:right">6.29</td><td style="text-align:right">12.0</td><td style="text-align:left">หา GM, PM</td></tr>
+<tr><td style="text-align:left">2</td><td style="text-align:right">0.561</td><td style="text-align:right">5.10</td><td style="text-align:right">11.5</td><td style="text-align:right">2.41</td><td style="text-align:right">60.0</td><td style="text-align:left">จาก PM</td></tr>
+<tr><td style="text-align:left">3</td><td style="text-align:right">1.979</td><td style="text-align:right">7.83</td><td style="text-align:right">12.0</td><td style="text-align:right">3.42</td><td style="text-align:right">61.4</td><td style="text-align:left">จาก GM</td></tr>
+</table>
+<div style="display:flex;gap:32px">
+<div style="flex:1;background:#FFFFFF;padding:36px 40px;border:1px solid #E1DFD3;border-radius:16px">
+<p style="font-size:34px;line-height:1.4">ตัวอย่าง 2–3 ออกแบบให้ GM ราว 12 dB และ PM ราว 60° ซึ่งเป็นช่วงที่นิยมใช้</p>
+</div>
+<div style="flex:1;background:#FFFFFF;padding:36px 40px;border:1px solid #E1DFD3;border-radius:16px">
+<p style="font-size:34px;line-height:1.4">เพิ่ม K → ωgc ขยับขึ้น และทั้ง GM กับ PM ลดลงพร้อมกัน</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5B6475">Gain Margin และ Phase Margin · 9</p>
+</section>
+<section id="specs" data-transition="fade" style="background:#F7F6F1;color:#14213D;font-family:'IBM Plex Sans Thai', Arial, sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<h2 style="font-size:64px;font-weight:700;line-height:1.15">ข้อกำหนดทางความถี่: OL และ CL</h2>
+<div style="display:flex;gap:32px">
+<div style="flex:1;display:flex;flex-direction:column;gap:16px;background:#FFFFFF;padding:44px;border:1px solid #E1DFD3;border-radius:20px">
+<h3 style="font-size:42px;font-weight:600;color:#1F5FBF">วงเปิด (OL): L(jω)</h3>
+<p style="font-size:34px;line-height:1.4">ωgc และ PM</p>
+<p style="font-size:34px;line-height:1.4">ωpc และ GM</p>
+<p style="font-size:34px;line-height:1.4">Kp = L(0)</p>
+<p style="font-size:34px;line-height:1.4">ess = 1 / (1 + Kp) ต่อ step</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:16px;background:#FFFFFF;padding:44px;border:1px solid #E1DFD3;border-radius:20px">
+<h3 style="font-size:42px;font-weight:600;color:#1F5FBF">วงปิด (CL): T = L / (1 + L)</h3>
+<p style="font-size:34px;line-height:1.4">T(0) = 1 − ess</p>
+<p style="font-size:34px;line-height:1.4">Mr = max |T| ที่ความถี่ ωr</p>
+<p style="font-size:34px;line-height:1.4">ωb: |T| ตก 3 dB จากค่า T(0)</p>
+<p style="font-size:34px;line-height:1.4">Ms = max |1/(1+L)| และ 1/Ms = ระยะถึงจุด −1</p>
+</div>
+</div>
+<div style="border-left:10px solid #D9622B;padding:12px 0 12px 36px;background:#FBF1EA">
+<p style="font-size:34px;line-height:1.4">ระบบประเภท 0 ที่ใช้ตัวควบคุมสัดส่วนมี T(0) &lt; 1 จึงวัด ωb เทียบกับ T(0) ไม่ใช่เทียบกับ 0 dB</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5B6475">Gain Margin และ Phase Margin · 10</p>
+</section>
+<section id="cl-results" data-transition="fade" style="background:#F7F6F1;color:#14213D;font-family:'IBM Plex Sans Thai', Arial, sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<h2 style="font-size:64px;font-weight:700;line-height:1.15">คำนวณ CL ทีละขั้น (ตัวอย่าง 2)</h2>
+<div style="display:flex;gap:36px">
+<div style="flex:1.1;display:flex;flex-direction:column;gap:18px">
+<p style="font-size:38px;font-weight:600;background:#EEF3FB;padding:20px 28px;border-radius:12px">T(s) = 56.14 / (s³ + 9s² + 26s + 80.14)</p>
+<div style="background:#FFFFFF;padding:26px 34px;border:1px solid #E1DFD3;border-radius:16px;display:flex;flex-direction:column;gap:6px">
+<p style="font-size:32px;line-height:1.4"><b>T(0)</b> = 56.14 / 80.14 = 0.70 (−3.09 dB)</p>
+<p style="font-size:32px;line-height:1.4"><b>Mr</b> = 56.14 / √Q(ω) ที่ ω ≈ 3.00 ได้ 1.10 (0.83 dB)</p>
+<p style="font-size:32px;line-height:1.4"><b>ωb</b> จาก Q(ω) = 2 · 80.14² ได้ ≈ 4.61 rad/s</p>
+<p style="font-size:32px;line-height:1.4"><b>Ms</b> ≈ 1.75 → ระยะถึง −1 เท่ากับ 0.57</p>
+<p style="font-size:28px;line-height:1.4;color:#3B465C">Q(ω) = (80.14 − 9ω²)² + (26ω − ω³)²</p>
+</div>
+</div>
+<div style="flex:0.9;display:flex;flex-direction:column;gap:12px">
+<table style="font-size:30px;color:#14213D">
+<tr><th style="width:22%;text-align:left;font-weight:700"> </th><th style="width:20%;text-align:right;font-weight:700">T(0)</th><th style="width:30%;text-align:right;font-weight:700">Mr</th><th style="width:14%;text-align:right;font-weight:700">ωb</th><th style="width:14%;text-align:right;font-weight:700">Ms</th></tr>
+<tr><td style="text-align:left">ตย. 1</td><td style="text-align:right">0.887</td><td style="text-align:right">5.36 (14.6 dB)</td><td style="text-align:right">9.58</td><td style="text-align:right">5.87</td></tr>
+<tr><td style="text-align:left">ตย. 2</td><td style="text-align:right">0.701</td><td style="text-align:right">1.10 (0.83 dB)</td><td style="text-align:right">4.61</td><td style="text-align:right">1.75</td></tr>
+<tr><td style="text-align:left">ตย. 3</td><td style="text-align:right">0.767</td><td style="text-align:right">1.06 (0.47 dB)</td><td style="text-align:right">6.63</td><td style="text-align:right">1.69</td></tr>
+</table>
+<p style="font-size:30px;line-height:1.4;color:#B8501F;font-weight:600">ตัวอย่าง 1 มี PM เพียง 12° จึงมียอดสูงมากที่วงปิด</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5B6475">Gain Margin และ Phase Margin · 11</p>
+</section>
+<section id="polar" data-transition="fade" style="background:#F7F6F1;color:#14213D;font-family:'IBM Plex Sans Thai', Arial, sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:30px">
+<h2 style="font-size:64px;font-weight:700;line-height:1.15;width:1000px">กราฟ Polar: อ่าน GM และ PM</h2>
+<div style="width:690px;display:flex;flex-direction:column;gap:20px">
+<p style="font-size:32px;line-height:1.4"><b>เริ่มต้น</b> ที่ ω = 0 อยู่บนแกนจริงบวกที่ Kp</p>
+<p style="font-size:32px;line-height:1.4"><b>PM</b> คือมุมจากแกนจริงลบถึงจุดที่เส้นโค้งตัดวงกลมหน่วย (●)</p>
+<p style="font-size:32px;line-height:1.4"><b>GM</b> = 1 / |จุดตัดแกนจริงลบ| (□)</p>
+<p style="font-size:32px;line-height:1.4"><b>1/Ms</b> คือระยะใกล้สุดถึงจุด −1</p>
+<div style="display:flex;flex-direction:column;gap:6px;margin-top:6px">
+<p style="font-size:30px;font-weight:600;color:#C0392B">ตัวอย่าง 1 (เข้าใกล้ −1 มากสุด)</p>
+<p style="font-size:30px;font-weight:600;color:#1F5FBF">ตัวอย่าง 2</p>
+<p style="font-size:30px;font-weight:600;color:#2E8B57">ตัวอย่าง 3</p>
+</div>
+</div>
+<svg aria-label="กราฟ Polar ของตัวอย่าง 1 ถึง 3" viewBox="0 0 900 680" width="900" height="680" xmlns="http://www.w3.org/2000/svg" style="position:absolute;left:892px;top:224px"><g stroke="#D8D6CC" stroke-width="1"><line x1="100" y1="0" x2="100" y2="680"/><line x1="300" y1="0" x2="300" y2="680"/><line x1="500" y1="0" x2="500" y2="680"/><line x1="700" y1="0" x2="700" y2="680"/><line x1="900" y1="0" x2="900" y2="680"/><line x1="0" y1="640" x2="900" y2="640"/><line x1="0" y1="440" x2="900" y2="440"/><line x1="0" y1="240" x2="900" y2="240"/><line x1="0" y1="40" x2="900" y2="40"/></g><g stroke="#14213D" stroke-width="2"><line x1="0" y1="240" x2="900" y2="240"/><line x1="300" y1="0" x2="300" y2="680"/></g><circle cx="300" cy="240" r="200" fill="none" stroke="#14213D" stroke-width="2" stroke-dasharray="8 6"/><circle cx="100" cy="240" r="7" fill="#14213D"/><path d="M1 468 L14 424 L30 385 L49 351 L69 321 L90 296 L111 275 L131 259 L151 246 L170 236 L187 228 L203 223 L217 220 L230 218 L241 217 L250 218 L259 218 L266 220 L272 221 L277 223 L281 224 L285 226 L288 228 L290 229 L292 230 L294 232 L295 233 L296 234 L297 235 L297 236 L298 236 L298 237 L299 237 L299 238 L300 239 L300 240" fill="none" stroke="#C0392B" stroke-width="5" stroke-linejoin="round"/><circle cx="104" cy="281" r="10" fill="#C0392B"/><rect x="152" y="231" width="18" height="18" fill="#F7F6F1" stroke="#C0392B" stroke-width="4"/><path d="M768 241 L768 245 L768 250 L768 255 L767 260 L767 266 L767 271 L766 277 L766 285 L765 290 L764 297 L762 304 L761 313 L759 322 L757 332 L752 344 L747 357 L742 371 L735 387 L726 404 L715 423 L701 443 L684 464 L663 486 L638 508 L608 528 L573 547 L532 562 L486 572 L437 575 L386 569 L335 553 L289 527 L249 493 L218 452 L199 409 L190 366 L192 327 L201 294 L215 269 L231 251 L246 240 L260 234 L271 231 L280 231 L286 232 L291 233 L294 234 L296 236 L297 237 L298 238 L299 239 L300 240" fill="none" stroke="#1F5FBF" stroke-width="5" stroke-linejoin="round"/><circle cx="200" cy="413" r="10" fill="#1F5FBF"/><rect x="238" y="231" width="18" height="18" fill="#F7F6F1" stroke="#1F5FBF" stroke-width="4"/><path d="M900 447 L876 480 L845 516 L804 551 L754 584 L694 610 L626 628 L553 634 L479 627 L407 608 L341 576 L283 533 L237 481 L207 423 L195 365 L196 330 L209 286 L229 256 L250 240 L268 233 L284 232 L293 234 L298 237 L300 240" fill="none" stroke="#2E8B57" stroke-width="5" stroke-linejoin="round"/><circle cx="204" cy="416" r="10" fill="#2E8B57"/><rect x="241" y="231" width="18" height="18" fill="#F7F6F1" stroke="#2E8B57" stroke-width="4"/></svg>
+<p style="position:absolute;left:930px;top:412px;width:70px;font-size:30px;color:#14213D;font-weight:700;text-align:right">−1</p>
+<p style="position:absolute;left:1650px;top:424px;width:140px;font-size:28px;color:#5B6475;text-align:right">Re L</p>
+<p style="position:absolute;left:1200px;top:228px;width:140px;font-size:28px;color:#5B6475">Im L</p>
+<p style="position:absolute;left:1480px;top:486px;width:310px;font-size:28px;color:#1F5FBF;text-align:right;font-weight:600">ω = 0 (Kp = 2.34)</p>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5B6475">Gain Margin และ Phase Margin · 12</p>
+</section>
+<section id="nichols" data-transition="fade" style="background:#F7F6F1;color:#14213D;font-family:'IBM Plex Sans Thai', Arial, sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:30px">
+<h2 style="font-size:64px;font-weight:700;line-height:1.15;width:1100px">กราฟ Nichols: อ่าน GM, PM, Mr และ ωb</h2>
+<div style="width:610px;display:flex;flex-direction:column;gap:18px">
+<p style="font-size:30px;line-height:1.4"><b>แกน:</b> |L| (dB) เทียบ ∠L (องศา) จุดวิกฤตคือ (−180°, 0 dB)</p>
+<p style="font-size:30px;line-height:1.4"><b>PM:</b> ที่เส้น 0 dB วัดแนวนอนถึง −180°</p>
+<p style="font-size:30px;line-height:1.4"><b>GM:</b> ที่ −180° วัดแนวตั้งถึง 0 dB</p>
+<p style="font-size:30px;line-height:1.4"><b>เส้นสีส้ม</b> คือ contour ของ |T| คงที่ (dB)</p>
+<p style="font-size:30px;line-height:1.4;color:#C0392B;font-weight:600">แดง: Mr = 0.83 dB สัมผัสเส้นโค้งที่ ωr</p>
+<p style="font-size:30px;line-height:1.4;color:#2E8B57;font-weight:600">เขียว: −6.10 dB (= T(0)/√2) ตัดที่ ωb</p>
+</div>
+<svg aria-label="กราฟ Nichols ของตัวอย่าง 2 พร้อม contour ของ |T|" viewBox="0 0 1000 640" width="1000" height="640" xmlns="http://www.w3.org/2000/svg" style="position:absolute;left:792px;top:232px"><g stroke="#D8D6CC" stroke-width="1"><line x1="0" y1="0" x2="0" y2="640"/><line x1="167" y1="0" x2="167" y2="640"/><line x1="333" y1="0" x2="333" y2="640"/><line x1="500" y1="0" x2="500" y2="640"/><line x1="667" y1="0" x2="667" y2="640"/><line x1="833" y1="0" x2="833" y2="640"/><line x1="1000" y1="0" x2="1000" y2="640"/><line x1="0" y1="640" x2="1000" y2="640"/><line x1="0" y1="533" x2="1000" y2="533"/><line x1="0" y1="427" x2="1000" y2="427"/><line x1="0" y1="320" x2="1000" y2="320"/><line x1="0" y1="213" x2="1000" y2="213"/><line x1="0" y1="107" x2="1000" y2="107"/><line x1="0" y1="0" x2="1000" y2="0"/></g><g stroke="#14213D" stroke-width="2"><line x1="0" y1="213" x2="1000" y2="213"/><line x1="333" y1="0" x2="333" y2="640"/></g><path d="M222 204 L231 221 L241 228 L250 234 L259 238 L269 241 L278 244 L287 246 L296 248 L306 249 L315 250 L324 251 L333 251 L343 251 L352 250 L361 249 L370 248 L380 246 L389 244 L398 241 L407 238 L417 234 L426 228 L435 221 L444 204 L437 181 L428 173 L419 167 L409 163 L400 159 L391 156 L381 154 L372 152 L363 151 L354 150 L344 149 L335 149 L326 149 L317 149 L307 150 L298 152 L289 153 L280 155 L270 158 L261 161 L252 165 L243 170 L233 177 L224 190Z" fill="none" stroke="#E3A36B" stroke-width="2"/><path d="M167 186 L176 208 L185 219 L194 227 L204 233 L213 238 L222 242 L231 246 L241 249 L250 252 L259 255 L269 257 L278 258 L287 260 L296 261 L306 262 L315 262 L324 263 L333 263 L343 263 L352 262 L361 262 L370 261 L380 260 L389 258 L398 257 L407 255 L417 252 L426 249 L435 246 L444 242 L454 238 L463 233 L472 227 L481 219 L491 208 L500 186 L493 156 L483 145 L474 137 L465 131 L456 125 L446 121 L437 117 L428 114 L419 111 L409 108 L400 106 L391 104 L381 103 L372 102 L363 101 L354 100 L344 99 L335 99 L326 99 L317 100 L307 100 L298 101 L289 102 L280 104 L270 105 L261 107 L252 110 L243 112 L233 115 L224 119 L215 123 L206 128 L196 134 L187 142 L178 151 L169 168Z" fill="none" stroke="#E3A36B" stroke-width="2"/><path d="M11 4 L20 60 L30 95 L39 120 L48 139 L57 155 L67 169 L76 180 L85 190 L94 199 L104 207 L113 215 L122 221 L131 227 L141 233 L150 238 L159 242 L169 246 L178 250 L187 254 L196 257 L206 260 L215 262 L224 265 L233 267 L243 269 L252 271 L261 272 L270 273 L280 275 L289 276 L298 276 L307 277 L317 277 L326 277 L335 278 L344 277 L354 277 L363 277 L372 276 L381 275 L391 274 L400 273 L409 271 L419 270 L428 268 L437 266 L446 264 L456 261 L465 258 L474 255 L483 252 L493 249 L502 245 L511 240 L520 236 L530 231 L539 225 L548 219 L557 212 L567 204 L576 196 L585 187 L594 176 L604 164 L613 149 L622 132 L631 111 L641 83 L650 42" fill="none" stroke="#E3A36B" stroke-width="2"/><path d="M0 213 L19 221 L37 229 L56 237 L74 244 L93 251 L111 258 L130 264 L148 269 L167 274 L185 279 L204 283 L222 286 L241 289 L259 291 L278 293 L296 294 L315 295 L333 295 L352 295 L370 294 L389 293 L407 291 L426 289 L444 286 L463 283 L481 279 L500 274 L519 269 L537 264 L556 258 L574 251 L593 244 L611 237 L630 229 L648 221 L667 213 L685 205 L704 197 L722 189 L741 182 L759 175 L778 168 L796 162 L815 157 L833 152 L852 148 L870 144 L889 140 L907 138 L926 135 L944 134 L963 132 L981 132 L1000 131" fill="none" stroke="#E3A36B" stroke-width="2"/><path d="M0 338 L37 342 L74 347 L111 350 L148 354 L185 357 L222 359 L259 361 L296 362 L333 362 L370 362 L407 361 L444 359 L481 357 L519 354 L556 350 L593 347 L630 342 L667 338 L704 334 L741 330 L778 326 L815 323 L852 320 L889 318 L926 316 L963 315 L1000 315" fill="none" stroke="#E3A36B" stroke-width="2"/><path d="M0 426 L37 428 L74 429 L111 431 L148 432 L185 433 L222 434 L259 435 L296 435 L333 435 L370 435 L407 435 L444 434 L481 433 L519 432 L556 431 L593 429 L630 428 L667 426 L704 425 L741 423 L778 422 L815 420 L852 419 L889 418 L926 417 L963 417 L1000 417" fill="none" stroke="#E3A36B" stroke-width="2"/><path d="M93 147 L102 175 L111 190 L120 201 L130 210 L139 218 L148 225 L157 231 L167 236 L176 241 L185 245 L194 249 L204 252 L213 256 L222 258 L231 261 L241 263 L250 265 L259 267 L269 268 L278 270 L287 271 L296 272 L306 272 L315 273 L324 273 L333 273 L343 273 L352 273 L361 272 L370 272 L380 271 L389 270 L398 268 L407 267 L417 265 L426 263 L435 261 L444 258 L454 256 L463 252 L472 249 L481 245 L491 241 L500 236 L509 231 L519 225 L528 218 L537 210 L546 201 L556 190 L565 175 L574 147 L567 94 L557 77 L548 66 L539 56 L530 48 L520 41 L511 35 L502 30 L493 25 L483 20 L474 16 L465 13 L456 10 L446 7 L437 4 L428 2 L246 0 L237 2 L228 5 L219 7 L209 10 L200 14 L191 17 L181 21 L172 26 L163 31 L154 36 L144 42 L135 50 L126 58 L117 68 L107 80 L98 98Z" fill="none" stroke="#C0392B" stroke-width="5"/><path d="M0 265 L37 275 L74 283 L111 291 L148 299 L185 305 L222 309 L259 313 L296 315 L333 316 L370 315 L407 313 L444 309 L481 305 L519 299 L556 291 L593 283 L630 275 L667 265 L704 256 L741 247 L778 239 L815 232 L852 226 L889 221 L926 218 L963 216 L1000 215" fill="none" stroke="#2E8B57" stroke-width="5"/><path d="M1000 135 L958 135 L909 138 L858 142 L810 148 L766 155 L714 166 L654 181 L588 201 L519 228 L449 262 L381 302 L318 348 L261 399 L213 454 L172 512 L138 573 L110 634" fill="none" stroke="#1F5FBF" stroke-width="6" stroke-linejoin="round"/><circle cx="333" cy="213" r="9" fill="#14213D"/><circle cx="556" cy="213" r="9" fill="#14213D"/><circle cx="488" cy="242" r="9" fill="#14213D"/><circle cx="361" cy="315" r="9" fill="#14213D"/><circle cx="333" cy="336" r="9" fill="#14213D"/></svg>
+<p style="position:absolute;left:868px;top:388px;width:250px;font-size:28px;font-weight:600;text-align:right">(−180°, 0 dB)</p>
+<p style="position:absolute;left:1362px;top:394px;width:260px;font-size:28px;font-weight:600">ωgc = 2.41</p>
+<p style="position:absolute;left:1296px;top:462px;width:260px;font-size:28px;font-weight:600;color:#C0392B">ωr = 3.00</p>
+<p style="position:absolute;left:1172px;top:524px;width:260px;font-size:28px;font-weight:600;color:#2E8B57">ωb = 4.61</p>
+<p style="position:absolute;left:905px;top:566px;width:210px;font-size:28px;font-weight:600;text-align:right">ωpc = 5.10</p>
+<p style="position:absolute;left:1640px;top:404px;width:150px;font-size:26px;color:#5B6475;text-align:right">0 dB</p>
+<p style="position:absolute;left:760px;top:884px;width:100px;font-size:26px;color:#5B6475">−270°</p>
+<p style="position:absolute;left:1075px;top:884px;width:100px;font-size:26px;color:#5B6475">−180°</p>
+<p style="position:absolute;left:1415px;top:884px;width:100px;font-size:26px;color:#5B6475">−90°</p>
+<p style="position:absolute;left:1740px;top:884px;width:60px;font-size:26px;color:#5B6475;text-align:right">0°</p>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5B6475">Gain Margin และ Phase Margin · 13</p>
+</section>
+<section id="ess" data-transition="fade" style="background:#F7F6F1;color:#14213D;font-family:'IBM Plex Sans Thai', Arial, sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:30px">
+<h2 style="font-size:64px;font-weight:700;line-height:1.15;width:1400px">ess: คำนวณและอ่านจากกราฟ</h2>
+<div style="width:700px;display:flex;flex-direction:column;gap:24px">
+<p style="font-size:36px;font-weight:600;line-height:1.35;background:#EEF3FB;padding:20px 28px;border-radius:12px">ess = 1 / (1 + Kp) , Kp = L(0)<br>T(0) = 1 − ess</p>
+<table style="font-size:30px;color:#14213D">
+<tr><th style="width:24%;text-align:left;font-weight:700">ตัวอย่าง</th><th style="width:44%;text-align:right;font-weight:700">Kp</th><th style="width:32%;text-align:right;font-weight:700">ess</th></tr>
+<tr><td style="text-align:left">1</td><td style="text-align:right">7.81 (17.85 dB)</td><td style="text-align:right">0.113</td></tr>
+<tr><td style="text-align:left">2</td><td style="text-align:right">2.34 (7.38 dB)</td><td style="text-align:right">0.299</td></tr>
+<tr><td style="text-align:left">3</td><td style="text-align:right">3.30 (10.37 dB)</td><td style="text-align:right">0.233</td></tr>
+</table>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:28px;line-height:1.4"><b>Bode:</b> ที่ราบความถี่ต่ำ = 20 log Kp dB</p>
+<p style="font-size:28px;line-height:1.4"><b>Polar:</b> เริ่มที่ Kp บนแกนจริงบวก</p>
+<p style="font-size:28px;line-height:1.4"><b>Nichols:</b> ขอบขวา (0°) สูง 20 log Kp dB</p>
+<p style="font-size:28px;line-height:1.4"><b>Step:</b> ess = 1 − y(∞)</p>
+</div>
+</div>
+<svg aria-label="ผลตอบสนอง step ของวงปิดตัวอย่าง 1 ถึง 3" viewBox="0 0 900 520" width="900" height="520" xmlns="http://www.w3.org/2000/svg" style="position:absolute;left:892px;top:232px"><g stroke="#D8D6CC" stroke-width="1"><line x1="0" y1="0" x2="0" y2="520"/><line x1="180" y1="0" x2="180" y2="520"/><line x1="360" y1="0" x2="360" y2="520"/><line x1="540" y1="0" x2="540" y2="520"/><line x1="720" y1="0" x2="720" y2="520"/><line x1="900" y1="0" x2="900" y2="520"/><line x1="0" y1="520" x2="900" y2="520"/><line x1="0" y1="358" x2="900" y2="358"/><line x1="0" y1="195" x2="900" y2="195"/><line x1="0" y1="32" x2="900" y2="32"/></g><line x1="0" y1="195" x2="900" y2="195" stroke="#14213D" stroke-width="2.5" stroke-dasharray="10 7"/><line x1="0" y1="232" x2="900" y2="232" stroke="#C0392B" stroke-width="2" stroke-dasharray="3 6"/><path d="M0 520 L9 501 L18 412 L27 269 L36 128 L45 41 L54 39 L63 114 L72 228 L81 334 L90 389 L99 376 L108 307 L117 215 L126 138 L135 105 L144 126 L153 187 L162 260 L171 315 L180 332 L189 307 L198 255 L207 198 L216 160 L225 154 L234 180 L243 224 L252 267 L261 292 L270 291 L279 267 L288 231 L297 198 L306 183 L315 188 L324 210 L333 239 L342 262 L351 271 L360 264 L369 244 L378 222 L387 205 L396 201 L405 209 L414 226 L423 243 L432 255 L441 256 L450 247 L459 234 L468 220 L477 213 L486 214 L495 222 L504 233 L513 243 L522 247 L531 245 L540 238 L549 229 L558 222 L567 220 L576 222 L585 228 L594 235 L603 240 L612 242 L621 239 L630 233 L639 228 L648 225 L657 224 L666 227 L675 232 L684 236 L693 238 L702 237 L711 235 L720 231 L729 228 L738 227 L747 228 L756 230 L765 233 L774 235 L783 236 L792 235 L801 233 L810 231 L819 229 L828 229 L837 230 L846 232 L855 233 L864 234 L873 234 L882 233 L891 232 L900 231" fill="none" stroke="#C0392B" stroke-width="5" stroke-linejoin="round"/><line x1="0" y1="292" x2="900" y2="292" stroke="#1F5FBF" stroke-width="2" stroke-dasharray="3 6"/><path d="M0 520 L18 504 L36 440 L54 350 L72 271 L90 227 L108 222 L126 244 L144 277 L162 304 L180 317 L198 317 L216 308 L234 296 L252 287 L270 283 L288 284 L306 287 L324 291 L342 295 L360 296 L378 295 L396 294 L414 292 L432 291 L450 291 L486 292 L540 293 L576 292 L900 292" fill="none" stroke="#1F5FBF" stroke-width="5" stroke-linejoin="round"/><line x1="0" y1="271" x2="900" y2="271" stroke="#2E8B57" stroke-width="2" stroke-dasharray="3 6"/><path d="M0 520 L18 477 L36 347 L54 238 L72 210 L90 240 L108 278 L126 293 L144 286 L162 273 L180 265 L198 265 L216 269 L234 272 L252 273 L270 272 L288 270 L306 270 L342 271 L900 271" fill="none" stroke="#2E8B57" stroke-width="5" stroke-linejoin="round"/><line x1="819" y1="290" x2="819" y2="197" stroke="#1F5FBF" stroke-width="4"/><path d="M810 211 L819 195 L828 211Z M810 276 L819 292 L828 276Z" fill="#1F5FBF"/></svg>
+<p style="position:absolute;left:892px;top:190px;width:300px;font-size:28px;font-weight:600;color:#5B6475">y(t) ของวงปิด</p>
+<p style="position:absolute;left:1640px;top:384px;width:150px;font-size:28px;font-weight:600;text-align:right">r = 1</p>
+<p style="position:absolute;left:1420px;top:456px;width:280px;font-size:30px;font-weight:700;color:#1F5FBF;text-align:right">ess = 0.30</p>
+<p style="position:absolute;left:880px;top:758px;width:60px;font-size:26px;color:#5B6475">0</p>
+<p style="position:absolute;left:1070px;top:758px;width:60px;font-size:26px;color:#5B6475">2</p>
+<p style="position:absolute;left:1250px;top:758px;width:60px;font-size:26px;color:#5B6475">4</p>
+<p style="position:absolute;left:1430px;top:758px;width:60px;font-size:26px;color:#5B6475">6</p>
+<p style="position:absolute;left:1610px;top:758px;width:60px;font-size:26px;color:#5B6475">8</p>
+<p style="position:absolute;left:1700px;top:758px;width:100px;font-size:26px;color:#5B6475;text-align:right">10 s</p>
+<p style="position:absolute;left:892px;top:808px;width:300px;font-size:28px;font-weight:600;color:#C0392B">ตย. 1: T(0) = 0.89</p>
+<p style="position:absolute;left:1192px;top:808px;width:300px;font-size:28px;font-weight:600;color:#1F5FBF">ตย. 2: T(0) = 0.70</p>
+<p style="position:absolute;left:1492px;top:808px;width:300px;font-size:28px;font-weight:600;color:#2E8B57">ตย. 3: T(0) = 0.77</p>
+<p style="position:absolute;left:892px;top:852px;width:900px;font-size:28px;line-height:1.4;color:#B8501F;font-weight:600">ถ้าต้องการ ess ≤ 5% ในตัวอย่าง 2 ต้อง K = 4.56 แต่ K วิกฤต = 2.1 จึงต้องเพิ่ม integrator</p>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5B6475">Gain Margin และ Phase Margin · 14</p>
+</section>
+<section id="matlab" data-transition="fade" style="background:#F7F6F1;color:#14213D;font-family:'IBM Plex Sans Thai', Arial, sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<h2 style="font-size:64px;font-weight:700;line-height:1.15">คำสั่ง MATLAB (Control System Toolbox)</h2>
+<div style="display:flex;gap:36px">
+<div style="flex:1.35;background:#14213D;color:#F2F0E6;padding:36px 40px;border-radius:16px;font-family:'IBM Plex Mono', monospace;font-size:27px;line-height:1.55;display:flex;flex-direction:column">
+<p style="font-size:27px;color:#9FB2D6;line-height:1.55">% ตัวอย่าง 2: ออกแบบ K จาก PM = 60°</p>
+<p style="font-size:27px;line-height:1.55">G = 100/((s+2)*(s+3)*(s+4));</p>
+<p style="font-size:27px;line-height:1.55">w = fzero(@(w) phaseDeg(G,w)+120,[0.5 10]);</p>
+<p style="font-size:27px;line-height:1.55">K = 1/abs(freqresp(G,w));  L = K*G;</p>
+<p style="font-size:27px;line-height:1.55">[Gm,Pm,Wpc,Wgc] = margin(L);</p>
+<p style="font-size:27px;line-height:1.55">T = feedback(L,1);  S = feedback(1,L);</p>
+<p style="font-size:27px;line-height:1.55">[Mr,wr] = getPeakGain(T,1e-6,[1e-4 100]);</p>
+<p style="font-size:27px;line-height:1.55">Wb = bandwidth(T);  ess = 1 - dcgain(T);</p>
+<p style="font-size:27px;line-height:1.55">nyquist(L);  nichols(L);  ngrid</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:14px;background:#FFFFFF;padding:34px 38px;border:1px solid #E1DFD3;border-radius:16px">
+<p style="font-size:30px;line-height:1.35"><b>margin</b> → GM (เป็นเท่า), PM, ωpc, ωgc</p>
+<p style="font-size:30px;line-height:1.35"><b>feedback</b> → T และ S</p>
+<p style="font-size:30px;line-height:1.35"><b>getPeakGain</b> → Mr, ωr, Ms</p>
+<p style="font-size:30px;line-height:1.35"><b>bandwidth</b> → ωb (ตก 3 dB จากค่า DC)</p>
+<p style="font-size:30px;line-height:1.35"><b>dcgain</b> → Kp และ T(0)</p>
+<p style="font-size:30px;line-height:1.35"><b>nyquist, nichols, ngrid</b> → กราฟ Polar และ Nichols</p>
+</div>
+</div>
+<div style="border-left:10px solid #D9622B;padding:12px 0 12px 36px;background:#FBF1EA">
+<p style="font-size:30px;line-height:1.4">Gm จาก margin เป็นอัตราส่วน ต้องแปลงเป็น dB เอง · phaseDeg ใช้ bode() เพราะ angle() จะ wrap ที่ ±180°</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5B6475">Gain Margin และ Phase Margin · 15</p>
+</section>
+<section id="takeaways" data-transition="fade" style="background:#14213D;color:#F7F6F1;font-family:'IBM Plex Sans Thai', Arial, sans-serif;padding:96px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<h2 style="font-size:64px;font-weight:700;line-height:1.15">สิ่งที่ต้องจำ</h2>
+<div style="display:flex;flex-direction:column;gap:22px">
+<div style="display:flex;gap:28px;align-items:center"><p style="width:64px;height:64px;background:#E8A25A;color:#14213D;font-size:36px;font-weight:700;text-align:center;line-height:64px;border-radius:50%">1</p><p style="font-size:36px;line-height:1.35">GM และ PM คือระยะห่างจากจุดวิกฤต −1: GM วัดที่ ωpc และ PM วัดที่ ωgc</p></div>
+<div style="display:flex;gap:28px;align-items:center"><p style="width:64px;height:64px;background:#E8A25A;color:#14213D;font-size:36px;font-weight:700;text-align:center;line-height:64px;border-radius:50%">2</p><p style="font-size:36px;line-height:1.35">K เลื่อนขนาดแต่ไม่เปลี่ยนเฟส: หาความถี่จากเฟสก่อน แล้วจึงหา K</p></div>
+<div style="display:flex;gap:28px;align-items:center"><p style="width:64px;height:64px;background:#E8A25A;color:#14213D;font-size:36px;font-weight:700;text-align:center;line-height:64px;border-radius:50%">3</p><p style="font-size:36px;line-height:1.35">Bode, Polar และ Nichols ให้ค่า margin เดียวกัน เลือกอ่านจากกราฟที่สะดวก</p></div>
+<div style="display:flex;gap:28px;align-items:center"><p style="width:64px;height:64px;background:#E8A25A;color:#14213D;font-size:36px;font-weight:700;text-align:center;line-height:64px;border-radius:50%">4</p><p style="font-size:36px;line-height:1.35">ดูวงปิดควบคู่: Mr, ωb, Ms และ ess = 1 / (1 + Kp)</p></div>
+<div style="display:flex;gap:28px;align-items:center"><p style="width:64px;height:64px;background:#E8A25A;color:#14213D;font-size:36px;font-weight:700;text-align:center;line-height:64px;border-radius:50%">5</p><p style="font-size:36px;line-height:1.35">ตัวควบคุมสัดส่วนล้วนให้ทั้ง margin ที่ดีและ ess ต่ำไม่ได้ ต้องเพิ่ม integrator</p></div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#8FA3C8">Gain Margin และ Phase Margin · 16</p>
+</section>
+</div>
+<div id="notes"></div>
+<div id="hud"></div>
+<script>
+var N=["เปิดเรื่อง: margin บอกว่าระบบวงปิดอยู่ห่างจากความไม่เสถียรเท่าใด วงกลมเส้นประและจุดสีส้มคือภาพของวงกลมหน่วยและจุดวิกฤต -1 ที่จะกลับมาในหัวข้อ Polar", "ใช้ภาพจุดวิกฤต -1 เป็นหลัก: ทุกการอ่านค่า margin คือการวัดระยะจาก L(jω) ถึงจุดนี้ ไม่ว่าจะอ่านจาก Bode, Polar หรือ Nichols", "ระวังเครื่องหมาย: GM เท่ากับลบของค่า dB ของ |L| ที่ ωpc เช่น |L| = 0.695 คือ -3.16 dB ได้ GM = +3.16 dB และ PM = 60° หมายถึงเฟสต้องเป็น -120° ไม่ใช่ -60°", "ขั้นตอนนี้ใช้ซ้ำได้กับทุกโจทย์ ตัวอย่างทั้งสามข้อต่อจากนี้เดินตามห้าขั้นนี้ เฟสของ L คือผลรวมเฟสของตัวเศษลบผลรวมเฟสของตัวส่วน", "ทางลัดมาจากเงื่อนไขว่าผลรวมของ arctan ทั้งสามเท่ากับ 180 องศา แปลว่า tan ของผลรวมเป็นศูนย์ ซึ่งลดรูปเป็น ω ยกกำลังสองเท่ากับผลรวมผลคูณของ pole ทีละคู่ ใช้ตรวจคำตอบจาก solver ได้ทันที แต่ใช้ไม่ได้เมื่อมี zero ในตัวเศษ เช่นตัวอย่าง 3", "ตรวจคำตอบด้วย Routh: ตัวส่วนคือ s กำลังสาม บวก 14 s กำลังสอง บวก 56 s บวก 64 ระบบวงปิดเสถียรเมื่อ 14 คูณ 56 มากกว่า 64 บวก K คือ K น้อยกว่า 720 ส่วนกลับของ 0.694 คือ 1.44 และ 500 คูณ 1.44 เท่ากับ 720 ตรงกับ GM 3.17 dB พอดี", "ค่าละเอียดคือ ωgc = 2.405 และ K = 0.5614 ตรวจด้วย Routh: ตัวส่วน s กำลังสาม บวก 9 s กำลังสอง บวก 26 s บวก 24 เสถียรเมื่อ 9 คูณ 26 มากกว่า 24 บวก 100K คือ K น้อยกว่า 2.1 ดังนั้น GM เท่ากับ 20 log ของ 2.1 หารด้วย 0.5614 ได้ 11.5 dB", "K ที่ได้คือค่าสูงสุดที่อนุญาต เพิ่ม K จะทำให้ GM ลดลง ลด K จะทำให้ GM เพิ่ม ถ้าต้องการเผื่อความปลอดภัยเลือก K ต่ำกว่านี้ได้ ตรวจด้วย Routh ได้ K วิกฤตประมาณ 7.88 ดังนั้น GM เท่ากับ 20 log ของ 7.88 หารด้วย 1.979 ได้ 12.0 dB", "GM และ PM วัดที่จุดเดียวของวงรอบ จึงไม่รับประกันความทนทานเสมอไป ควรดูร่วมกับค่าสูงสุดของ sensitivity Ms และผลตอบสนองเวลาด้วย หัวข้อถัดไปจะเพิ่มข้อกำหนดของวงปิด", "GM และ PM เป็นข้อกำหนดของวงเปิดเท่านั้น ในการออกแบบต้องดูข้อกำหนดของวงปิดควบคู่ เพราะ Mr และ ωb บอกการแกว่งและความเร็วของผลตอบสนอง ส่วน Ms บอกระยะห่างต่ำสุดจากจุดวิกฤต", "Mr เทียบกับค่า DC ได้ 1.57 หรือ 3.9 dB แสดงว่ามี peaking ชัดเจนแม้ PM จะเท่ากับ 60 องศา เพราะ T(0) ต่ำ ตัวอย่าง 1 มี Mr เท่ากับ 5.36 และ Ms เท่ากับ 5.87 สอดคล้องกับ PM ที่ต่ำมาก ค่า ωb ในตารางมาจากการสแกนด้วย Python ส่วนผลจาก MATLAB ต่างกันเล็กน้อยตามความละเอียดของการแก้สมการ", "เส้นโค้งสีแดงของตัวอย่าง 1 ตัดวงกลมหน่วยที่มุมประมาณ 12 องศาจากแกนจริงลบ และตัดแกนจริงลบที่ -0.69 ซึ่งใกล้จุด -1 มาก ส่วนตัวอย่าง 2 และ 3 ตัดแกนจริงลบที่ -0.27 และ -0.25 ตามลำดับ กราฟตัดส่วนที่ขนาดใหญ่ออกเพราะเส้นโค้งของตัวอย่าง 1 เริ่มที่ 7.8 บนแกนจริง", "เส้นโค้งสีน้ำเงินคือ L ของตัวอย่าง 2 ที่ K เท่ากับ 0.5614 ตัดเส้น 0 dB ที่ -120 องศา ได้ PM 60 องศา และตัดเส้น -180 องศาที่ -11.46 dB ได้ GM 11.5 dB contour สีแดง 0.83 dB คือยอดสูงสุดของ |T| ซึ่งสัมผัสเส้นโค้งที่ ωr เท่ากับ 3.00 ส่วน contour สีเขียว -6.10 dB เท่ากับ T(0) หารรากที่สองของ 2 ตัดเส้นโค้งที่ ωb เท่ากับ 4.61", "ระบบในตัวอย่างไม่มี pole ที่ s เท่ากับศูนย์ จึงเป็นระบบประเภท 0 มี ess ค่าจำกัดและไม่เป็นศูนย์ต่อ step ตัวอย่าง 2: Kp เท่ากับ 56.14 หารด้วย 24 ได้ 2.339 ess เท่ากับ 1 หาร 3.339 ได้ 0.299 ตรงกับช่องว่างระหว่างเส้น r เท่ากับ 1 และค่าสุดท้าย 0.70 ของผลตอบสนอง step ตัวอย่าง 1 ยังแกว่งไม่นิ่งครบที่ 10 วินาที ลด ess ด้วยเกนอย่างเดียวไม่ได้เพราะต้องการ Kp อย่างน้อย 19 ซึ่งเกินค่าวิกฤตของระบบ", "สคริปต์เต็มชื่อ gm_pm_examples.m คำนวณทั้งสามตัวอย่างและวาดกราฟ ผมรันบน MATLAB R2026a แล้ว ผลตรงกับตัวเลขในสไลด์ เช่น K เท่ากับ 0.5614 สำหรับตัวอย่าง 2 และ 1.9791 สำหรับตัวอย่าง 3 phaseDeg เป็นฟังก์ชันช่วยที่คืนเฟสต่อเนื่องในหน่วยองศาจาก bode", "ปิดด้วยข้อ 5 ซึ่งเชื่อมไปสู่การออกแบบตัวควบคุม PI และ PID: เพิ่ม integrator ทำให้ ess ต่อ step เป็นศูนย์ แต่ต้องกลับมาตรวจ GM และ PM อีกครั้งด้วยวิธีเดียวกับในชุดสไลด์นี้"];
+var S=[].slice.call(document.querySelectorAll('#stage section')),i=0,st=document.getElementById('stage');
+function fit(){var k=Math.min(innerWidth/1920,innerHeight/1080);st.style.transform='scale('+k+')';st.style.marginLeft=(-960*k)+'px';st.style.marginTop=(-540*k)+'px';}
+function show(n){i=Math.max(0,Math.min(S.length-1,n));S.forEach(function(s,j){s.classList.toggle('on',j===i)});document.getElementById('hud').textContent=(i+1)+' / '+S.length+'  ← →  N = notes  F = fullscreen';document.getElementById('notes').textContent=N[i];location.hash=i+1;}
+addEventListener('resize',fit);
+addEventListener('keydown',function(e){if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown')show(i+1);else if(e.key==='ArrowLeft'||e.key==='PageUp')show(i-1);else if(e.key==='Home')show(0);else if(e.key==='End')show(S.length-1);else if(e.key==='n'||e.key==='N'){var n=document.getElementById('notes');n.style.display=n.style.display==='block'?'none':'block'}else if(e.key==='f'||e.key==='F'){document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen()}});
+var tx=0;addEventListener('touchstart',function(e){tx=e.touches[0].clientX});addEventListener('touchend',function(e){var d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50)show(i+(d<0?1:-1))});
+addEventListener('click',function(e){if(e.clientX>innerWidth/2)show(i+1);else show(i-1)});
+fit();show((parseInt(location.hash.slice(1))||1)-1);
+</script></body></html>
